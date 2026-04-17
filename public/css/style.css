@@ -202,46 +202,13 @@ body {
     border: 1px solid rgba(0, 184, 148, 0.2);
     transition: all 0.3s;
     overflow: hidden;
+    padding: 18px;
 }
 
 .server-card:hover {
     transform: translateY(-3px);
     border-color: #00b894;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
-.server-card-inner {
-    display: flex;
-    gap: 15px;
-    padding: 18px;
-}
-
-/* Логотипы */
-.server-logo {
-    flex-shrink: 0;
-    width: 80px;
-    height: 80px;
-    border-radius: 12px;
-    overflow: hidden;
-    background: rgba(0, 184, 148, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.server-logo img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.server-logo.placeholder {
-    font-size: 40px;
-    background: rgba(0, 184, 148, 0.15);
-}
-
-.server-info {
-    flex: 1;
 }
 
 .server-name {
@@ -308,40 +275,6 @@ body {
     border-radius: 20px;
     background: rgba(0, 184, 148, 0.15);
     font-size: 0.7rem;
-}
-
-/* Теги */
-.server-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    margin: 8px 0;
-}
-
-.server-tag {
-    padding: 3px 10px;
-    background: rgba(108, 92, 231, 0.2);
-    border-radius: 20px;
-    font-size: 0.65rem;
-    color: #6c5ce7;
-}
-
-/* Рейты */
-.server-rates-compact {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 8px 0;
-    font-size: 0.7rem;
-    color: #94a3b8;
-}
-
-/* Описание */
-.server-description-preview {
-    font-size: 0.7rem;
-    color: #aaa;
-    margin: 8px 0;
-    line-height: 1.4;
 }
 
 /* Рейтинг */
@@ -631,26 +564,6 @@ body {
     color: #aaa;
 }
 
-/* =============== TOAST =============== */
-.toast-notification {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    z-index: 10000;
-    padding: 12px 20px;
-    border-radius: 8px;
-    background: #00b894;
-    color: #0f172a;
-    font-weight: 500;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-    animation: slideIn 0.3s ease;
-}
-
-@keyframes slideIn {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-}
-
 /* =============== BACK TO TOP =============== */
 .back-to-top {
     position: fixed;
@@ -670,6 +583,7 @@ body {
     transition: all 0.3s;
     border: none;
     font-size: 1.2rem;
+    z-index: 999;
 }
 
 .back-to-top.visible {
@@ -677,51 +591,9 @@ body {
     visibility: visible;
 }
 
-/* =============== ПОПУЛЯРНЫЕ ПОИСКИ =============== */
-.popular-searches {
-    background: rgba(0, 184, 148, 0.05);
-    padding: 12px 0;
-    border-bottom: 1px solid rgba(0, 184, 148, 0.1);
-}
-
-.popular-searches-inner {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-}
-
-.popular-searches-title {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #00b894;
-    font-size: 0.85rem;
-    font-weight: 600;
-}
-
-.popular-searches-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px;
-}
-
-.popular-search-link {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    padding: 4px 10px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
-    color: #94a3b8;
-    text-decoration: none;
-    font-size: 0.75rem;
-    transition: all 0.2s;
-}
-
-.popular-search-link:hover {
-    background: rgba(0, 184, 148, 0.15);
-    color: #00b894;
+.back-to-top:hover {
+    background: #00d9a6;
+    transform: scale(1.05);
 }
 
 /* =============== АДАПТИВНОСТЬ =============== */
@@ -734,29 +606,6 @@ body {
         grid-template-columns: 1fr;
     }
     
-    .server-card-inner {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-    }
-    
-    .server-logo {
-        width: 70px;
-        height: 70px;
-    }
-    
-    .server-tags {
-        justify-content: center;
-    }
-    
-    .server-rates-compact {
-        justify-content: center;
-    }
-    
-    .review-summary {
-        justify-content: center;
-    }
-    
     .filters {
         gap: 8px;
     }
@@ -766,26 +615,36 @@ body {
         font-size: 0.8rem;
     }
     
-    .popular-searches-inner {
+    .header-inner {
         flex-direction: column;
         text-align: center;
     }
     
-    .popular-searches-list {
+    .main-nav {
         justify-content: center;
+    }
+    
+    .review-summary {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .server-actions {
+        flex-direction: column;
     }
 }
 
 @media (max-width: 480px) {
     .server-card {
-        padding: 12px;
+        padding: 15px;
     }
     
-    .header-inner {
-        flex-direction: column;
+    .seo-content {
+        padding: 20px;
     }
     
-    .main-nav {
-        justify-content: center;
+    .version-link {
+        padding: 6px 12px;
+        font-size: 0.75rem;
     }
 }
