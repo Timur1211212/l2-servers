@@ -41,10 +41,10 @@ async function updateServerRating(serverId, session = null) {
         await Server.findByIdAndUpdate(serverId, updateData);
     }
     
-    // Инвалидируем кэш страницы сервера
+    // Инвалидируем кэш страницы сервера (используем правильную функцию)
     const server = await Server.findById(serverId);
     if (server && server.slug) {
-        cacheService.delete(`page:/server/${server.slug}`);
+        cacheService.invalidateCache(`/server/${server.slug}`);
     }
 }
 

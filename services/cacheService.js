@@ -40,6 +40,12 @@ function cachePage(ttl = config.CACHE_TTL) {
     };
 }
 
+// Удаление конкретного ключа из кэша
+function cacheDelete(key) {
+    pageCache.del(key);
+    console.log(`[CACHE] Deleted key: ${key}`);
+}
+
 // Функция инвалидации кэша по паттерну
 function invalidateCache(pattern) {
     const keys = pageCache.keys();
@@ -79,8 +85,13 @@ function flushCache() {
     console.log('[CACHE] Full cache flushed');
 }
 
+// Алиас для обратной совместимости
+const deleteCache = cacheDelete;
+
 module.exports = {
     cachePage,
+    cacheDelete,
+    deleteCache,
     invalidateCache,
     invalidateServerCache,
     flushCache,
