@@ -61,6 +61,8 @@ function baseLayout({
     <button id="backToTop" class="back-to-top" aria-label="Наверх">↑</button>
     
     <script src="/js/main.js" defer></script>
+    <script src="/js/main.js" defer></script>
+    <script src="/js/global.js" defer></script>
     ${additionalScripts}
 </body>
 </html>`;
