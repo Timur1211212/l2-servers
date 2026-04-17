@@ -58,7 +58,6 @@ function baseLayout({
     
     <script src="/js/main.js" defer></script>
     ${additionalScripts}
-    <script src="//cdn.jsdelivr.net/npm/instant.page@5.1.0/instantpage.js" type="module" defer></script>
 </body>
 </html>`;
 }
