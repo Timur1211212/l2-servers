@@ -108,6 +108,7 @@ app.use((err, req, res, next) => {
 });
 
 // =============== ЗАПУСК ===============
+// =============== ЗАПУСК ===============
 const startServer = async () => {
     try {
         await connectDB();
@@ -126,10 +127,32 @@ const startServer = async () => {
         const { updateAllRatings } = require('./services/ratingService');
         await updateAllRatings();
         
-        app.listen(config.PORT, () => {
-            console.log(`🚀 Server running on port ${config.PORT}`);
-            console.log(`📍 http://localhost:${config.PORT}`);
-        });
+        // HTTP сервер (для редиректа на HTTPS)
+        http.createServer((req, res) => {
+            if (sslConfig.isEnabled()) {
+                res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
+                res.end();
+            } else {
+                // Если HTTPS не настроен, просто отвечаем
+                res.writeHead(200, { 'Content-Type': 'text/plain' });
+                res.end('Server is running');
+            }
+        }).listen(80);
+        console.log('✅ HTTP → HTTPS redirect on port 80');
+        
+        // HTTPS или HTTP сервер
+        if (sslConfig.isEnabled()) {
+            const httpsServer = https.createServer(sslConfig.getOptions(), app);
+            httpsServer.listen(443, () => {
+                console.log(`✅ HTTPS server: https://${config.DOMAIN}`);
+                console.log(`📍 https://${config.DOMAIN}`);
+            });
+        } else {
+            app.listen(config.PORT, () => {
+                console.log(`⚠️ HTTP server: http://localhost:${config.PORT}`);
+                console.log(`📍 http://localhost:${config.PORT}`);
+            });
+        }
         
     } catch (error) {
         console.error('Failed to start server:', error);
