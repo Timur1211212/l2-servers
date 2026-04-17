@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Админ панель</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            background: rgba(255,255,255,0.05);
+            padding: 40px;
+            border-radius: 20px;
+            border: 1px solid #00b894;
+            text-align: center;
+        }
+        .login-container h2 { color: #00b894; margin-bottom: 30px; }
+        .login-container input {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #00b894;
+            border-radius: 8px;
+            color: white;
+            font-size: 16px;
+        }
+        .login-container button {
+            width: 100%;
+            padding: 12px;
+            background: #00b894;
+            border: none;
+            border-radius: 8px;
+            color: #1a1a2e;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        .error { color: #ff4757; margin-top: 15px; display: none; }
+        
+        .admin-panel { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #00b894;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        h1{
+            color: rgba(255, 255, 255, 0.736);
+        }
+
+        h3{
+            color: rgba(255, 255, 255, 0.736);
+            margin-bottom: 10px;
+        }
+
+        /* Простой вариант - только для выбранной опции */
+/* Цвет фона выпадающего списка (стрелка вниз) */
+select option {
+    padding: 10px;
+    background: #333;  /* <- Цвет фона всех опций в выпадающем списке */
+    color: white;
+}
+        .admin-nav { display: flex; gap: 15px; flex-wrap: wrap; }
+        .admin-nav button {
+            padding: 10px 20px;
+            background: rgba(0,184,148,0.2);
+            border: 1px solid #00b894;
+            border-radius: 8px;
+            color: #00b894;
+            cursor: pointer;
+        }
+        .admin-nav button.active { background: #00b894; color: #1a1a2e; }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        
+        .server-form {
+            background: rgba(255,255,255,0.05);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 15px;
+        }
+        .full-width { grid-column: 1 / -1; margin-top: 20px;}
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid #00b894;
+            border-radius: 8px;
+            color: white;
+        }
+        .btn-save { background: #00b894; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn-delete { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        .btn-edit { background: #ffa502; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
+        
+        .list-item {
+            background: rgba(255,255,255,0.05);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+            color: whitesmoke;
+        }
+        .list-item-info h4 { color: #00b894; margin-bottom: 5px; }
+        .list-item-actions { display: flex; gap: 10px; }
+    </style>
+</head>
+<body>
+    <!-- Форма входа -->
+    <div id="loginContainer" class="login-container">
+        <h2>🔐 Вход в админ панель</h2>
+        <form id="loginForm">
+            <input type="text" id="username" placeholder="Логин" autocomplete="username" required>
+            <input type="password" id="password" placeholder="Пароль" autocomplete="current-password" required>
+            <button type="submit">Войти</button>
+        </form>
+        <div id="loginError" class="error"></div>
+    </div>
+
+    <!-- Админ панель -->
+    <div id="adminContainer" class="admin-panel" style="display: none;">
+        <div class="admin-header">
+            <h1>🎮 Админ панель</h1>
+            <div class="admin-nav">
+                <button data-section="servers" class="active">📋 Серверы</button>
+                <button data-section="reviews">⭐ Отзывы</button>
+                <button data-section="dmca">⚖️ DMCA</button>
+                <button id="logoutBtn" style="background:#ff4757; color:white;">🚪 Выйти</button>
+            </div>
+        </div>
+
+        <!-- Серверы -->
+        <div id="serversSection" class="admin-section active">
+            <div class="server-form">
+                <h3 id="formTitle">➕ Добавить сервер</h3>
+                <form id="serverForm">
+                    <input type="hidden" id="serverId">
+                    <div class="form-grid">
+                        <input type="text" id="serverName" placeholder="Название сервера *" required>
+                        <input type="url" id="serverWebsite" placeholder="Сайт *" required>
+                        <input type="text" id="serverVersion" placeholder="Версия (Interlude)">
+                        <input type="date" id="serverOpeningDate">
+                        <select id="serverStatus">
+                            <option value="VIP">VIP</option>
+                            <option value="Почти VIP">Почти VIP</option>
+                            <option value="Не VIP, но тоже неплохой сервер">Обычный</option>
+                        </select>
+                        <input type="text" id="serverExp" placeholder="Exp">
+                        <input type="text" id="serverAdena" placeholder="Adena">
+                        <input type="text" id="serverDrop" placeholder="Drop">
+                        <input type="text" id="serverSpoil" placeholder="Spoil">
+                        <input type="text" id="serverSpoilChance" placeholder="Spoil Chance">
+                        <input type="text" id="serverSealstone" placeholder="Sealstone">
+                        <input type="text" id="serverRaidBossExp" placeholder="Raid Boss Exp">
+                        <input type="text" id="serverRaidBossDrop" placeholder="Raid Boss Drop">
+                        <input type="text" id="serverEpicRaidBossDrop" placeholder="Epic Raid Boss Drop">
+                        <input type="text" id="serverQuestAdena" placeholder="Quest Adena">
+                        <input type="text" id="serverQuest" placeholder="Quest">
+                        <input type="text" id="serverQuestExp" placeholder="Quest Exp">
+                    </div>
+                    <textarea id="serverDescription" rows="3" placeholder="Описание" class="full-width"></textarea>
+                    <div style="margin-top: 15px;">
+                        <button type="submit" class="btn-save">Сохранить</button>
+                        <button type="button" id="cancelEdit" class="btn-delete">Отмена</button>
+                    </div>
+                </form>
+            </div>
+            <div id="serversList"></div>
+        </div>
+
+        <!-- Отзывы -->
+        <div id="reviewsSection" class="admin-section">
+            <div id="reviewsList"></div>
+        </div>
+
+        <!-- DMCA -->
+        <div id="dmcaSection" class="admin-section">
+            <div id="dmcaList"></div>
+        </div>
+    </div>
+
+    <script>
+        let editingServerId = null;
+
+        // Проверка авторизации
+        async function checkAuth() {
+            try {
+                const res = await fetch('/api/admin/check-auth', { credentials: 'include' });
+                if (res.ok) {
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('adminContainer').style.display = 'block';
+                    loadServers();
+                    loadReviews();
+                    loadDmca();
+                }
+            } catch(e) { console.error(e); }
+        }
+
+        // Вход
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const errorDiv = document.getElementById('loginError');
+            
+            errorDiv.style.display = 'none';
+            
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password }),
+                    credentials: 'include'
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    checkAuth();
+                } else {
+                    errorDiv.textContent = data.error || 'Ошибка входа';
+                    errorDiv.style.display = 'block';
+                }
+            } catch(err) {
+                errorDiv.textContent = 'Ошибка подключения';
+                errorDiv.style.display = 'block';
+            }
+        });
+
+        // Выход
+        document.getElementById('logoutBtn')?.addEventListener('click', async () => {
+            await fetch('/api/logout', { method: 'POST', credentials: 'include' });
+            location.reload();
+        });
+
+        // Навигация
+        document.querySelectorAll('.admin-nav button[data-section]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.admin-nav button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`${btn.dataset.section}Section`).classList.add('active');
+            });
+        });
+
+        // Загрузка серверов
+        async function loadServers() {
+            const res = await fetch('/api/admin/servers', { credentials: 'include' });
+            const servers = await res.json();
+            const container = document.getElementById('serversList');
+            if (!servers.length) {
+                container.innerHTML = '<div class="list-item">Нет серверов. Добавьте первый!</div>';
+                return;
+            }
+            container.innerHTML = servers.map(s => `
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <h4>${escapeHtml(s.name)}</h4>
+                        <div>${s.website} | ${s.version || 'Interlude'} | ${s.status}</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <button class="btn-edit" onclick="editServer('${s._id}')">✏️ Редактировать</button>
+                        <button class="btn-delete" onclick="deleteServer('${s._id}')">🗑️ Удалить</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Редактирование сервера
+        window.editServer = async (id) => {
+            const res = await fetch(`/api/admin/servers/${id}`, { credentials: 'include' });
+            const s = await res.json();
+            editingServerId = s._id;
+            document.getElementById('serverId').value = s._id;
+            document.getElementById('serverName').value = s.name;
+            document.getElementById('serverWebsite').value = s.website;
+            document.getElementById('serverVersion').value = s.version || '';
+            document.getElementById('serverOpeningDate').value = s.openingDate ? s.openingDate.split('T')[0] : '';
+            document.getElementById('serverStatus').value = s.status;
+            document.getElementById('serverExp').value = s.exp || '';
+            document.getElementById('serverAdena').value = s.adena || '';
+            document.getElementById('serverDrop').value = s.drop || '';
+            document.getElementById('serverSpoil').value = s.spoil || '';
+            document.getElementById('serverSpoilChance').value = s.spoilChance || '';
+            document.getElementById('serverSealstone').value = s.sealstone || '';
+            document.getElementById('serverRaidBossExp').value = s.raidBossExp || '';
+            document.getElementById('serverRaidBossDrop').value = s.raidBossDrop || '';
+            document.getElementById('serverEpicRaidBossDrop').value = s.epicRaidBossDrop || '';
+            document.getElementById('serverQuestAdena').value = s.questAdena || '';
+            document.getElementById('serverQuest').value = s.quest || '';
+            document.getElementById('serverQuestExp').value = s.questExp || '';
+            document.getElementById('serverDescription').value = s.description || '';
+            document.getElementById('formTitle').innerHTML = '✏️ Редактировать сервер';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        };
+
+        // Сохранение сервера
+        document.getElementById('serverForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                name: document.getElementById('serverName').value,
+                website: document.getElementById('serverWebsite').value,
+                version: document.getElementById('serverVersion').value,
+                openingDate: document.getElementById('serverOpeningDate').value || null,
+                status: document.getElementById('serverStatus').value,
+                exp: document.getElementById('serverExp').value,
+                adena: document.getElementById('serverAdena').value,
+                drop: document.getElementById('serverDrop').value,
+                spoil: document.getElementById('serverSpoil').value,
+                spoilChance: document.getElementById('serverSpoilChance').value,
+                sealstone: document.getElementById('serverSealstone').value,
+                raidBossExp: document.getElementById('serverRaidBossExp').value,
+                raidBossDrop: document.getElementById('serverRaidBossDrop').value,
+                epicRaidBossDrop: document.getElementById('serverEpicRaidBossDrop').value,
+                questAdena: document.getElementById('serverQuestAdena').value,
+                quest: document.getElementById('serverQuest').value,
+                questExp: document.getElementById('serverQuestExp').value,
+                description: document.getElementById('serverDescription').value
+            };
+            
+            const url = editingServerId ? `/api/servers/${editingServerId}` : '/api/servers';
+            const method = editingServerId ? 'PUT' : 'POST';
+            
+            await fetch(url, {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+                credentials: 'include'
+            });
+            
+            resetForm();
+            loadServers();
+        });
+
+        document.getElementById('cancelEdit').addEventListener('click', resetForm);
+        
+        function resetForm() {
+            editingServerId = null;
+            document.getElementById('serverForm').reset();
+            document.getElementById('serverId').value = '';
+            document.getElementById('formTitle').innerHTML = '➕ Добавить сервер';
+        }
+
+        // Удаление сервера
+        window.deleteServer = async (id) => {
+            if (confirm('Удалить сервер?')) {
+                await fetch(`/api/servers/${id}`, { method: 'DELETE', credentials: 'include' });
+                loadServers();
+            }
+        };
+
+        // Загрузка отзывов
+        async function loadReviews() {
+            const res = await fetch('/api/admin/reviews', { credentials: 'include' });
+            const reviews = await res.json();
+            const container = document.getElementById('reviewsList');
+            if (!reviews.length) {
+                container.innerHTML = '<div class="list-item">Нет отзывов</div>';
+                return;
+            }
+            container.innerHTML = reviews.map(r => `
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <h4>${escapeHtml(r.title)}</h4>
+                        <div>⭐ ${r.rating}/5 | ${escapeHtml(r.authorName)} | ${r.serverId?.name || 'Unknown'}</div>
+                        <div>${escapeHtml(r.content.substring(0, 100))}...</div>
+                        <div>Статус: <strong>${r.status}</strong></div>
+                    </div>
+                    <div class="list-item-actions">
+                        <select onchange="updateReviewStatus('${r._id}', this.value)">
+                            <option value="approved" ${r.status === 'approved' ? 'selected' : ''}>Одобрен</option>
+                            <option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Ожидает</option>
+                            <option value="rejected" ${r.status === 'rejected' ? 'selected' : ''}>Отклонен</option>
+                        </select>
+                        <button class="btn-delete" onclick="deleteReview('${r._id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.updateReviewStatus = async (id, status) => {
+            await fetch(`/api/admin/reviews/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+                credentials: 'include'
+            });
+            loadReviews();
+        };
+
+        window.deleteReview = async (id) => {
+            if (confirm('Удалить отзыв?')) {
+                await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE', credentials: 'include' });
+                loadReviews();
+            }
+        };
+
+        // Загрузка DMCA
+        async function loadDmca() {
+            const res = await fetch('/api/admin/dmca', { credentials: 'include' });
+            const complaints = await res.json();
+            const container = document.getElementById('dmcaList');
+            if (!complaints.length) {
+                container.innerHTML = '<div class="list-item">Нет жалоб</div>';
+                return;
+            }
+            container.innerHTML = complaints.map(c => `
+                <div class="list-item">
+                    <div class="list-item-info">
+                        <h4>${escapeHtml(c.fullName)}</h4>
+                        <div>${escapeHtml(c.email)} | ${c.status}</div>
+                        <div>${escapeHtml(c.copyrightedWork.substring(0, 100))}...</div>
+                    </div>
+                    <div class="list-item-actions">
+                        <select onchange="updateDmcaStatus('${c._id}', this.value)">
+                            <option value="pending" ${c.status === 'pending' ? 'selected' : ''}>Ожидает</option>
+                            <option value="reviewed" ${c.status === 'reviewed' ? 'selected' : ''}>Рассмотрена</option>
+                            <option value="resolved" ${c.status === 'resolved' ? 'selected' : ''}>Решена</option>
+                            <option value="rejected" ${c.status === 'rejected' ? 'selected' : ''}>Отклонена</option>
+                        </select>
+                        <button class="btn-delete" onclick="deleteDmca('${c._id}')">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.updateDmcaStatus = async (id, status) => {
+            await fetch(`/api/admin/dmca/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status }),
+                credentials: 'include'
+            });
+            loadDmca();
+        };
+
+        window.deleteDmca = async (id) => {
+            if (confirm('Удалить жалобу?')) {
+                await fetch(`/api/admin/dmca/${id}`, { method: 'DELETE', credentials: 'include' });
+                loadDmca();
+            }
+        };
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Запуск
+        checkAuth();
+    </script>
+</body>
+</html>

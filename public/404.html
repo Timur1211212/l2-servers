@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Страница не найдена - База серверов Lineage 2</title>
+    <link rel="canonical" href="https://zerokulasite.ru/">
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #e6e6e6;
+            text-align: center;
+            padding: 20px;
+        }
+        .error-container {
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(26, 26, 46, 0.95);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 184, 148, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+        .error-code { font-size: 120px; color: #ff4757; margin-bottom: 20px; font-weight: bold; }
+        .error-title { font-size: 32px; color: #00b894; margin-bottom: 20px; }
+        .error-message { font-size: 18px; margin-bottom: 30px; color: #a0a0a0; }
+        .error-link {
+            padding: 12px 25px;
+            background: #00b894;
+            color: #16213e;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            display: inline-block;
+            margin: 5px;
+        }
+        .suggestions {
+            margin: 30px 0;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            text-align: left;
+        }
+        .suggestions h3 { color: #00b894; margin-bottom: 15px; text-align: center; }
+        .suggestions ul { list-style: none; padding-left: 0; }
+        .suggestions li { margin: 12px 0; padding-left: 25px; position: relative; }
+        .suggestions li:before { content: "→"; position: absolute; left: 0; color: #00b894; }
+        .suggestions a { color: #a0a0a0; text-decoration: none; }
+        .suggestions a:hover { color: #00b894; text-decoration: underline; }
+        .search-box { margin: 20px 0; display: flex; gap: 10px; }
+        .search-box input {
+            flex: 1;
+            padding: 12px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid #00b894;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+        }
+        .search-box button {
+            padding: 12px 20px;
+            background: #00b894;
+            border: none;
+            border-radius: 8px;
+            color: #16213e;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .legal-links { margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(0, 184, 148, 0.2); }
+        .legal-links a { color: #a0a0a0; text-decoration: none; font-size: 12px; margin: 0 10px; }
+        .legal-links a:hover { color: #00b894; }
+        @media (max-width: 480px) {
+            .error-container { padding: 20px; }
+            .error-code { font-size: 80px; }
+            .search-box { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">404</div>
+        <h1 class="error-title">Страница не найдена</h1>
+        <p class="error-message">Извините, запрашиваемая страница не существует или была перемещена.</p>
+        
+        <div class="suggestions">
+            <h3>🔍 Что можно сделать?</h3>
+            <ul>
+                <li><a href="/">🏠 Перейти на главную страницу</a></li>
+                <li><a href="/top-servers">🏆 Посмотреть топ серверы</a></li>
+                <li><a href="/new-servers">🆕 Новые серверы</a></li>
+                <li><a href="/version/interlude">🎮 Серверы Interlude</a></li>
+                <li><a href="/contacts">📞 Связаться с администрацией</a></li>
+            </ul>
+        </div>
+        
+        <div class="search-box">
+            <input type="text" id="searchInput" placeholder="Поиск серверов...">
+            <button onclick="searchServer()">🔍 Найти</button>
+        </div>
+        
+        <a href="/" class="error-link">🏠 На главную</a>
+        
+        <div class="legal-links">
+            <a href="/privacy-policy">Политика конфиденциальности</a> |
+            <a href="/terms-of-service">Пользовательское соглашение</a> |
+            <a href="/disclaimer">Отказ от ответственности</a>
+        </div>
+    </div>
+    <script>
+        function searchServer() {
+            const query = document.getElementById('searchInput').value;
+            if (query.trim()) window.location.href = '/?search=' + encodeURIComponent(query);
+        }
+        document.getElementById('searchInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') searchServer();
+        });
+    </script>
+</body>
+</html>

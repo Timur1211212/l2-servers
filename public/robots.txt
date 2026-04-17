@@ -1,0 +1,41 @@
+# Разрешаем всем поисковым роботам
+User-agent: *
+Allow: /
+
+# Запрещаем админ-панель и API
+Disallow: /admin-main
+Disallow: /admin-main.html
+Disallow: /api/
+Disallow: /api/admin/
+
+# Запрещаем дубли страниц с параметрами
+Disallow: /*?page=
+Disallow: /*?search=
+Disallow: /*?filter=
+Disallow: /*?review=
+Disallow: /*?reviews=
+
+# Запрещаем индексацию страниц по _id (только slug должны индексироваться)
+Disallow: /server/*?*
+Disallow: /*/undefined
+
+# Запрещаем служебные страницы
+Disallow: /50x.html
+Disallow: /*.json$
+Disallow: /*.xml$
+
+# Запрещаем временные и тестовые страницы (если есть)
+Disallow: /temp/
+Disallow: /test/
+
+# Указываем путь к sitemap
+Sitemap: https://zerokulasite.ru/sitemap.xml
+
+# Для Яндекса
+Host: https://zerokulasite.ru
+
+# Для Bing и других (Google игнорирует)
+Crawl-delay: 0.5
+
+# Рекомендация для Яндекса - чистота URL
+# Убираем дублирующиеся слеши

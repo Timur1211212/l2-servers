@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ошибка сервера - База серверов Lineage 2</title>
+    <meta name="robots" content="noindex, follow">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: #e6e6e6;
+            text-align: center;
+            padding: 20px;
+        }
+        .error-container {
+            max-width: 600px;
+            padding: 40px;
+            background: rgba(26, 26, 46, 0.95);
+            border-radius: 20px;
+            border: 1px solid rgba(0, 184, 148, 0.3);
+        }
+        .error-code { font-size: 120px; color: #ff4757; margin-bottom: 20px; font-weight: bold; }
+        .error-title { font-size: 32px; color: #00b894; margin-bottom: 20px; }
+        .error-message { font-size: 18px; margin-bottom: 30px; color: #a0a0a0; }
+        .error-link {
+            padding: 12px 25px;
+            background: #00b894;
+            color: #16213e;
+            text-decoration: none;
+            border-radius: 10px;
+            font-weight: 600;
+            display: inline-block;
+            margin: 5px;
+        }
+        .retry-btn { background: rgba(255, 255, 255, 0.1); color: #00b894; border: 1px solid #00b894; }
+        .legal-links { margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(0, 184, 148, 0.2); }
+        .legal-links a { color: #a0a0a0; text-decoration: none; font-size: 12px; margin: 0 10px; }
+        .legal-links a:hover { color: #00b894; }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-code">500</div>
+        <h1 class="error-title">Внутренняя ошибка сервера</h1>
+        <p class="error-message">Произошла техническая ошибка. Пожалуйста, попробуйте позже.</p>
+        <a href="/" class="error-link">🏠 На главную</a>
+        <a href="javascript:location.reload()" class="error-link retry-btn">🔄 Попробовать снова</a>
+        <div class="legal-links">
+            <a href="/privacy-policy">Политика конфиденциальности</a> |
+            <a href="/terms-of-service">Пользовательское соглашение</a> |
+            <a href="/contacts">Контакты</a>
+        </div>
+    </div>
+</body>
+</html>

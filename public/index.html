@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    
+    <!-- =============== КРИТИЧЕСКИЕ СТИЛИ ДЛЯ МГНОВЕННОЙ ОТРИСОВКИ LCP =============== -->
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);color:#fff;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+        .container{max-width:1200px;margin:0 auto;padding:15px 20px}
+        header{padding:0 0 30px 0;text-align:center}
+        .lcp-title{font-size:clamp(1.6rem,5vw,2.3rem);color:#00b894;text-align:center;margin:0 0 8px;font-weight:700;line-height:1.2;text-wrap:balance}
+        .lcp-subtitle{font-size:1rem;color:#94a3b8;text-align:center;margin:0;text-wrap:balance}
+        .breadcrumb-container{min-height:24px;margin-bottom:15px}
+        .breadcrumb-list{display:flex;flex-wrap:wrap;list-style:none;gap:5px;padding:0;margin:0}
+        .breadcrumb-list li{font-size:0.8rem;color:#94a3b8}
+        .breadcrumb-list a{color:#00b894;text-decoration:none}
+        .breadcrumb-list li:not(:last-child):after{content:"›";margin-left:5px;color:#00b894}
+        .search-bar{max-width:500px;margin:0 auto 25px}
+        #searchInput{width:100%;padding:14px 18px;border:2px solid #00b894;border-radius:40px;background:rgba(255,255,255,0.08);color:#fff;font-size:15px;outline:none}
+        #searchInput::placeholder{color:#aaa}
+        #searchInput:focus{border-color:#00d9a6;background:rgba(255,255,255,0.12)}
+        .filters{display:flex;justify-content:center;flex-wrap:wrap;gap:10px;margin-bottom:25px}
+        .filter-btn{padding:8px 18px;border:2px solid #00b894;border-radius:25px;background:transparent;color:#00b894;font-weight:600;font-size:0.85rem;cursor:pointer;transition:all 0.2s}
+        .filter-btn:hover,.filter-btn.active{background:#00b894;color:#1a1a2e}
+        .stats{margin-bottom:25px;text-align:center;font-size:1.1rem;color:#94a3b8}
+        .stat span{font-size:1.4rem;font-weight:bold;color:#00b894}
+        .servers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:20px}
+        .loading{grid-column:1/-1;padding:40px;text-align:center;font-size:1.1rem;color:#00b894}
+        .loading-spinner{width:36px;height:36px;margin:0 auto 12px;border:3px solid rgba(0,184,148,0.2);border-top:3px solid #00b894;border-radius:50%;animation:spin 0.8s linear infinite}
+        @keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+        .empty{grid-column:1/-1;padding:40px;text-align:center;font-size:1.1rem;color:#aaa}
+        .download-banner{text-align:center;margin:20px auto 30px;max-width:500px}
+        .download-banner-link{display:inline-block;padding:12px 28px;background:linear-gradient(135deg,#00b894,#6c5ce7);color:#fff;text-decoration:none;border-radius:40px;font-weight:bold;font-size:1rem;transition:all 0.3s}
+        .download-banner-link:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(0,184,148,0.3)}
+    </style>
+    
+    <!-- Предзагрузка основного CSS -->
+    <link rel="preload" href="/css/style.css" as="style" fetchpriority="high">
+    <link rel="stylesheet" href="/css/style.css" media="print" onload="this.media='all';this.onload=null">
+    <noscript><link rel="stylesheet" href="/css/style.css"></noscript>
+    
+    <!-- =============== SEO МЕТА-ТЕГИ =============== -->
+    <title>Рейтинг серверов Lineage 2 2026 — каталог L2 серверов с отзывами</title>
+    <meta name="description" content="Актуальный рейтинг серверов Lineage 2 2026. Лучшие L2 серверы: Interlude, High Five, Classic. Подробная статистика, рейты, отзывы игроков. Найди свой идеальный сервер!">
+    <meta name="keywords" content="lineage 2 серверы, l2 серверы, рейтинг серверов lineage 2, топ серверов l2, lineage 2 interlude, high five, classic, лучшие серверы lineage 2, отзывы о серверах l2, русские серверы l2">
+    <meta name="author" content="База серверов Lineage 2">
+    <meta name="robots" content="index, follow, max-image-preview:large">
+    
+    <!-- Дополнительные мета-теги -->
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#00b894">
+    <meta name="msapplication-TileColor" content="#00b894">
+    <meta name="revisit-after" content="1 days">
+    <meta name="distribution" content="global">
+    <meta name="rating" content="General">
+    
+    <!-- Гео-метки -->
+    <meta name="geo.placename" content="Russia">
+    <meta name="geo.region" content="RU">
+    
+    <!-- Мобильная оптимизация -->
+    <meta name="HandheldFriendly" content="True">
+    <meta name="MobileOptimized" content="320">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Canonical -->
+    <link rel="canonical" href="https://zerokulasite.ru/">
+    
+    <!-- =============== PRELOADS & PRECONNECTS =============== -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="dns-prefetch" href="https://mc.yandex.ru">
+    
+    <!-- =============== OPEN GRAPH =============== -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://zerokulasite.ru/">
+    <meta property="og:title" content="Рейтинг серверов Lineage 2 2026 — каталог L2 серверов">
+    <meta property="og:description" content="Актуальный рейтинг серверов Lineage 2 2026 с рейтингами, рейтами и отзывами игроков. Найди свой идеальный сервер!">
+    <meta property="og:image" content="https://zerokulasite.ru/og-image.jpg">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta property="og:locale" content="ru_RU">
+    <meta property="og:site_name" content="База серверов Lineage 2">
+    
+    <!-- VK -->
+    <meta property="vk:title" content="Рейтинг серверов Lineage 2 2026 — каталог L2 серверов">
+    <meta property="vk:description" content="Актуальный рейтинг серверов Lineage 2 2026 с рейтингами, рейтами и отзывами игроков">
+    <meta property="vk:image" content="https://zerokulasite.ru/og-image.jpg">
+    
+    <!-- WhatsApp -->
+    <meta property="wa:title" content="Рейтинг серверов Lineage 2 2026 — каталог L2 серверов">
+    <meta property="wa:description" content="Лучшие серверы Lineage 2 с отзывами игроков, рейтингами и полной статистикой">
+    <meta property="wa:image" content="https://zerokulasite.ru/og-image.jpg">
+    
+    <!-- Telegram -->
+    <meta property="telegram:title" content="Рейтинг серверов Lineage 2 2026 — каталог L2 серверов">
+    <meta property="telegram:description" content="Актуальный рейтинг серверов Lineage 2 2026 с рейтингами, рейтами и отзывами игроков">
+    
+    <!-- =============== TWITTER CARD =============== -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Рейтинг серверов Lineage 2 2026 — каталог L2 серверов">
+    <meta name="twitter:description" content="Актуальный рейтинг серверов Lineage 2 2026 с рейтингами, рейтами и отзывами игроков.">
+    <meta name="twitter:image" content="https://zerokulasite.ru/og-image.jpg">
+    
+    <!-- =============== FAVICON =============== -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/manifest.json">
+    
+    <!-- =============== SCHEMA.ORG (ПОЛНАЯ ВЕРСИЯ, ОТЛОЖЕННАЯ ЗАГРУЗКА) =============== -->
+    <script>
+        (function() {
+            if (window.requestIdleCallback) {
+                requestIdleCallback(loadSchemas, { timeout: 2000 });
+            } else {
+                setTimeout(loadSchemas, 1000);
+            }
+            
+            function loadSchemas() {
+                const schemas = [
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "WebSite",
+                        "name": "База серверов Lineage 2",
+                        "alternateName": "L2 Servers Base",
+                        "description": "Актуальный рейтинг серверов Lineage 2 2026 с рейтингами, рейтами и отзывами игроков",
+                        "url": "https://zerokulasite.ru/",
+                        "potentialAction": {
+                            "@type": "SearchAction",
+                            "target": {
+                                "@type": "EntryPoint",
+                                "urlTemplate": "https://zerokulasite.ru/?search={search_term_string}"
+                            },
+                            "query-input": "required name=search_term_string"
+                        },
+                        "inLanguage": "ru"
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "Organization",
+                        "name": "База серверов Lineage 2",
+                        "url": "https://zerokulasite.ru/",
+                        "logo": "https://zerokulasite.ru/apple-touch-icon.png",
+                        "sameAs": ["https://t.me/ZerokulL2"],
+                        "contactPoint": {
+                            "@type": "ContactPoint",
+                            "contactType": "customer service",
+                            "availableLanguage": ["Russian"]
+                        }
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "LocalBusiness",
+                        "name": "База серверов Lineage 2",
+                        "description": "Каталог и рейтинг серверов Lineage 2",
+                        "url": "https://zerokulasite.ru/",
+                        "logo": "https://zerokulasite.ru/apple-touch-icon.png",
+                        "priceRange": "Free",
+                        "address": {
+                            "@type": "PostalAddress",
+                            "addressCountry": "RU"
+                        }
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "FAQPage",
+                        "mainEntity": [
+                            {
+                                "@type": "Question",
+                                "name": "Как выбрать лучший сервер Lineage 2?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "При выборе сервера обращайте внимание на рейтинг, количество отзывов, дату открытия и рейты. Свежие проекты часто предлагают лучшие условия для старта, а топовые серверы гарантируют стабильность и большое онлайн-сообщество."
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": "Какие версии Lineage 2 самые популярные?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Самые популярные версии: Interlude (классика), High Five (улучшенная графика), Classic (возвращение к истокам) и Essence (для новичков)."
+                                }
+                            },
+                            {
+                                "@type": "Question",
+                                "name": "Как добавить свой сервер в каталог?",
+                                "acceptedAnswer": {
+                                    "@type": "Answer",
+                                    "text": "Владельцы серверов могут связаться с нами через Telegram или email для добавления своего проекта в базу. Мы проводим проверку перед публикацией."
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "HowTo",
+                        "name": "Как зарегистрироваться на сервере Lineage 2",
+                        "description": "Пошаговая инструкция по регистрации на любом сервере Lineage 2",
+                        "totalTime": "PT5M",
+                        "step": [
+                            {"@type": "HowToStep", "name": "Выберите сервер из каталога", "position": 1, "text": "Найдите подходящий сервер в нашем каталоге, обращая внимание на рейтинг, отзывы и рейты."},
+                            {"@type": "HowToStep", "name": "Перейдите на сайт сервера", "position": 2, "text": "Нажмите кнопку 'Играть на сервере' или перейдите по ссылке на сайт проекта."},
+                            {"@type": "HowToStep", "name": "Найдите раздел регистрации", "position": 3, "text": "На сайте сервера найдите кнопку 'Регистрация' или 'Создать аккаунт'."},
+                            {"@type": "HowToStep", "name": "Заполните форму регистрации", "position": 4, "text": "Укажите логин, пароль и email адрес. Запомните введенные данные."},
+                            {"@type": "HowToStep", "name": "Скачайте игровой клиент", "position": 5, "text": "Скачайте клиент нужной версии с сайта сервера и установите его."},
+                            {"@type": "HowToStep", "name": "Начните игру", "position": 6, "text": "Запустите клиент, введите логин и пароль, создайте персонажа и начинайте играть!"}
+                        ]
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "HowTo",
+                        "name": "Как выбрать класс в Lineage 2",
+                        "description": "Руководство по выбору класса для новичков и опытных игроков",
+                        "totalTime": "PT10M",
+                        "step": [
+                            {"@type": "HowToStep", "name": "Определите свой стиль игры", "position": 1, "text": "Решите, хотите ли вы играть в ближнем бою, на дальних дистанциях или поддерживать союзников магией."},
+                            {"@type": "HowToStep", "name": "Изучите основные классы", "position": 2, "text": "Ознакомьтесь с основными классами: Воин (Tank/DPS), Лучник (DPS), Маг (Nuker/Healer), Разбойник (Assassin)."},
+                            {"@type": "HowToStep", "name": "Для новичков: выберите гладиатора или лучника", "position": 3, "text": "Новичкам рекомендуем Гладиатора (высокая выживаемость) или Серебряного Лучника (простой и эффективный)."},
+                            {"@type": "HowToStep", "name": "Для опытных игроков: маги или ассасины", "position": 4, "text": "Опытным игрокам подойдут маги (Spellsinger, Spellhowler) или ассасины (Treasure Hunter, Plains Walker)."},
+                            {"@type": "HowToStep", "name": "Учитывайте рейты сервера", "position": 5, "text": "На высокорейтовых серверах лучше брать классы с быстрым фармом, на х1-х5 - универсальные классы."},
+                            {"@type": "HowToStep", "name": "Почитайте отзывы о классах", "position": 6, "text": "Почитайте отзывы других игроков о разных классах на выбранном сервере."}
+                        ]
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "HowTo",
+                        "name": "Как фармить адену на сервере Lineage 2",
+                        "description": "Эффективные способы заработка игровой валюты на любом сервере",
+                        "totalTime": "P1D",
+                        "step": [
+                            {"@type": "HowToStep", "name": "Фарм мобов с высоким дропом аденки", "position": 1, "text": "Изучите рейты сервера и фармите мобов, которые дают больше всего аденки и дропа."},
+                            {"@type": "HowToStep", "name": "Собирайте и продавайте материалы", "position": 2, "text": "Собирайте материалы для крафта (кожи, руды, ткани) и продавайте их на торговой площадке."},
+                            {"@type": "HowToStep", "name": "Выполняйте квесты", "position": 3, "text": "На многих серверах квесты дают хорошую награду в виде аденки и опыта."},
+                            {"@type": "HowToStep", "name": "Торгуйте на рынке", "position": 4, "text": "Покупайте вещи дешевле, продавайте дороже. Отслеживайте цены на популярные предметы."},
+                            {"@type": "HowToStep", "name": "Охотьтесь на Raid боссов", "position": 5, "text": "Участвуйте в убийстве Raid боссов - они дают много аденки и ценные дропы."},
+                            {"@type": "HowToStep", "name": "Используйте крафт", "position": 6, "text": "Прокачивайте крафт и создавайте вещи, которые пользуются спросом у других игроков."}
+                        ]
+                    },
+                    {
+                        "@context": "https://schema.org",
+                        "@type": "HowTo",
+                        "name": "Как участвовать в осадах замков Lineage 2",
+                        "description": "Полное руководство по участию в осадах замков",
+                        "totalTime": "PT2H",
+                        "step": [
+                            {"@type": "HowToStep", "name": "Вступите в клан", "position": 1, "text": "Найдите активный клан, который участвует в осадах. Без клана участвовать в осаде нельзя."},
+                            {"@type": "HowToStep", "name": "Достигните нужного уровня", "position": 2, "text": "Обычно требуется уровень 40+ для участия в осадах замков."},
+                            {"@type": "HowToStep", "name": "Узнайте расписание осад", "position": 3, "text": "Осады проходят по воскресеньям в 20:00 по московскому времени. Уточните расписание на сервере."},
+                            {"@type": "HowToStep", "name": "Подготовьте расходники", "position": 4, "text": "Закупите зелья, баффы, свитки возврата. Без подготовки будет сложно."},
+                            {"@type": "HowToStep", "name": "Приходите на точку сбора", "position": 5, "text": "За 15-30 минут до начала осады приходите на точку сбора, указанную клан-лидером."},
+                            {"@type": "HowToStep", "name": "Следуйте тактике клана", "position": 6, "text": "Слушайтесь команд клан-лидера, действуйте сообща, защищайте флаги и артефакты."},
+                            {"@type": "HowToStep", "name": "Получите награду", "position": 7, "text": "После успешной осады участники клана получают награду и доступ в замок."}
+                        ]
+                    }
+                ];
+                
+                schemas.forEach(schema => {
+                    const script = document.createElement('script');
+                    script.type = 'application/ld+json';
+                    script.textContent = JSON.stringify(schema);
+                    document.head.appendChild(script);
+                });
+            }
+        })();
+    </script>
+    
+    <!-- Пустой контейнер для ItemList (заполняется в JS) -->
+    <script type="application/ld+json" id="itemListSchema">
+    {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        "itemListElement": []
+    }
+    </script>
+    
+    <!-- =============== ЯНДЕКС.МЕТРИКА (ОТЛОЖЕННАЯ) =============== -->
+    <script>
+        (function() {
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
+                    m[i].l=1*new Date();
+                    for (var j = 0; j < document.scripts.length; j++) {if (document.scripts[j].src === r) { return; }}
+                    k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
+                    (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
+                    
+                    ym(106160512, "init", {
+                        clickmap:true,
+                        trackLinks:true,
+                        accurateTrackBounce:true,
+                        webvisor:true
+                    });
+                }, 2000);
+            });
+        })();
+    </script>
+    <noscript><div><img src="https://mc.yandex.ru/watch/106160512" style="position:absolute; left:-9999px;" alt="" /></div></noscript>
+</head>
+<body>
+    <!-- Хлебные крошки -->
+    <div class="container">
+        <div class="breadcrumb-container">
+            <nav aria-label="Навигация">
+                <ol class="breadcrumb-list" itemscope itemtype="https://schema.org/BreadcrumbList">
+                    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                        <a href="/" itemprop="item">
+                            <span itemprop="name">Главная</span>
+                        </a>
+                        <meta itemprop="position" content="1">
+                    </li>
+                    <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+                        <a href="/all-servers" itemprop="item">
+                            <span itemprop="name">Серверы Lineage 2</span>
+                        </a>
+                        <meta itemprop="position" content="2">
+                    </li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- LCP элемент - главный заголовок -->
+    <div class="container">
+        <header>
+            <h1 class="lcp-title">Рейтинг серверов Lineage 2 2026</h1>
+            <p class="lcp-subtitle">Лучшие серверы Lineage 2 с отзывами игроков, рейтингами и полной статистикой</p>
+        </header>
+
+        <div class="search-bar">
+            <input type="text" id="searchInput" placeholder="🔍 Поиск серверов по названию, версии или рейтам..." autocomplete="off" aria-label="Поиск серверов">
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-status="all">🌐 Все серверы</button>
+            <button class="filter-btn" data-status="VIP">⭐ VIP серверы</button>
+            <button class="filter-btn" data-status="Почти VIP">✨ Почти VIP</button>
+            <button class="filter-btn" data-status="Не VIP, но тоже неплохой сервер">🛡️ Обычные серверы</button>
+        </div>
+
+        <!-- Баннер скачивания -->
+        <div class="download-banner">
+            <a href="/download" class="download-banner-link">📥 Скачать клиент Lineage 2 бесплатно →</a>
+        </div>
+
+        <div class="stats">
+            <div class="stat">📊 Серверов в базе: <span id="totalServers">0</span></div>
+        </div>
+
+        <div id="serversList" class="servers-grid">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <div>Загрузка серверов...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SEO текстовый блок -->
+    <section class="seo-content">
+        <div class="container">
+            <div class="seo-text">
+                <h2>Лучшие серверы Lineage 2 2026 — Полный каталог</h2>
+                <p><strong>База серверов Lineage 2</strong> — это крупнейший русскоязычный каталог частных серверов L2. Мы собираем актуальную информацию о всех популярных проектах: рейты, версии, даты открытий, отзывы игроков. Наш рейтинг помогает выбрать лучший сервер для комфортной игры.</p>
+                
+                <h3>Почему стоит играть на проверенных серверах Lineage 2?</h3>
+                <p>Выбор качественного сервера — залог комфортной игры. На нашей базе вы найдете только проверенные проекты с честной администрацией, стабильной работой и активным комьюнити. Мы ежедневно обновляем информацию и проверяем доступность серверов.</p>
+                
+                <h3>Какие версии Lineage 2 представлены в каталоге?</h3>
+                <ul>
+                    <li><strong>Interlude</strong> — классическая версия, любимая миллионами игроков</li>
+                    <li><strong>High Five</strong> — улучшенная графика, баланс классов и новый контент</li>
+                    <li><strong>Classic</strong> — возвращение к истокам игры</li>
+                    <li><strong>Essence</strong> — упрощенная версия для быстрого старта</li>
+                    <li><strong>Freya, Gracia, Epilogue</strong> — другие популярные версии</li>
+                </ul>
+                
+                <h3>Как выбрать сервер для игры в 2026 году?</h3>
+                <p>При выборе сервера обращайте внимание на рейтинг, количество отзывов, дату открытия и рейты. Свежие проекты часто предлагают лучшие условия для старта, а топовые серверы гарантируют стабильность и большое онлайн-сообщество. Читайте отзывы реальных игроков — это лучший способ узнать о реальном положении дел на сервере.</p>
+                
+                <h3>Как добавить сервер в каталог?</h3>
+                <p>Владельцы серверов могут <a href="/contacts">связаться с нами</a> для добавления своего проекта в базу. Мы проводим тщательную проверку перед публикацией, чтобы обеспечить качество каталога и защитить игроков от недобросовестных проектов.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Инструкции для игроков -->
+    <section class="seo-content">
+        <div class="container">
+            <div class="seo-text">
+                <h2>📚 Полезные инструкции для игроков Lineage 2</h2>
+                
+                <h3>📝 Как зарегистрироваться на сервере Lineage 2?</h3>
+                <p>Регистрация на любом сервере Lineage 2 проходит по стандартной схеме: выберите сервер в нашем каталоге, перейдите на его сайт, найдите раздел регистрации, заполните форму с логином и паролем, скачайте клиент и начните игру. Рекомендуем выбирать серверы с высоким рейтингом и положительными отзывами.</p>
+                
+                <h3>⚔️ Как выбрать класс в Lineage 2 для новичка?</h3>
+                <p>Для новичков в Lineage 2 лучше всего подходят классы с простым геймплеем и высокой выживаемостью: Гладиатор (танк/дамагер), Серебряный Лучник (дальний бой), Епископ (хилер). Опытным игрокам рекомендуем магов (Spellsinger, Spellhowler) или ассасинов (Treasure Hunter). Выбор класса зависит от вашего стиля игры и рейтов сервера.</p>
+                
+                <h3>💰 Как быстро фармить адену на сервере?</h3>
+                <p>Самые эффективные способы заработка аденки: фарм мобов с высоким дропом, сбор и продажа материалов для крафта, выполнение квестов, торговля на аукционе, охота на Raid боссов. На высокорейтовых серверах также можно фармить эпических боссов.</p>
+                
+                <h3>🏰 Как участвовать в осадах замков?</h3>
+                <p>Для участия в осадах замков необходимо вступить в клан, достичь уровня 40+, знать расписание осад (обычно воскресенье 20:00 МСК), подготовить расходники (зелья, баффы) и следовать тактике клан-лидера. Успешная осада приносит клану награду и доступ в замок.</p>
+                
+                <h3>🎯 Какой сервер выбрать для PvP?</h3>
+                <p>Для любителей PvP лучше всего подходят серверы с рейтами x50-x100, где есть система олимпиад, массовые PvP и осады замков. Обратите внимание на серверы с активным комьюнити и ежедневными ивентами.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Популярные версии -->
+    <div class="popular-versions">
+        <div class="container">
+            <h3>Популярные версии серверов</h3>
+            <div class="version-links">
+                <a href="/version/interlude" class="version-link">Interlude серверы</a>
+                <a href="/version/high-five" class="version-link">High Five серверы</a>
+                <a href="/version/classic" class="version-link">Classic серверы</a>
+                <a href="/version/essence" class="version-link">Essence серверы</a>
+                <a href="/all-servers" class="version-link">📋 Все серверы</a>
+                <a href="/pvp-servers" class="version-link">⚔️ PvP серверы</a>
+                <a href="/vip-servers" class="version-link">⭐ VIP серверы</a>
+                <a href="/top-servers" class="version-link">🏆 Топ серверы</a>
+                <a href="/new-servers" class="version-link">🆕 Новые серверы</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Популярные серверы -->
+    <div class="popular-versions" style="margin-top: 0;">
+        <div class="container">
+            <h3>⭐ Популярные серверы</h3>
+            <div class="version-links">
+                <a href="/servers/scryde" class="version-link">Scryde L2</a>
+                <a href="/servers/main" class="version-link">Main L2</a>
+                <a href="/servers/lu4" class="version-link">LU4 L2</a>
+                <a href="/servers/asterios" class="version-link">Asterios L2</a>
+                <a href="/servers/eglobal" class="version-link">Eglobal L2</a>
+                <a href="/servers/legacy" class="version-link">Legacy L2</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cookie баннер -->
+    <div id="cookieBanner" class="cookie-banner" style="display: none;">
+        <div class="cookie-banner-content">
+            <div class="cookie-banner-text">
+                <strong>🍪 Мы используем cookies</strong>
+                <p>Мы используем файлы cookie для улучшения работы сайта, анализа трафика и персонализации контента. Вы можете управлять настройками cookie в любое время.</p>
+            </div>
+            <div class="cookie-banner-buttons">
+                <button id="cookieSettingsBtn" class="cookie-btn-settings">⚙️ Настроить</button>
+                <button id="cookieAcceptBtn" class="cookie-btn-accept">✅ Принять все</button>
+                <button id="cookieRejectBtn" class="cookie-btn-reject">❌ Только необходимые</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно настроек cookie -->
+    <div id="cookieSettingsModal" class="modal">
+        <div class="modal-content cookie-settings-modal">
+            <span class="close-cookie-settings">&times;</span>
+            <h3>🍪 Настройки файлов cookie</h3>
+            <p class="cookie-settings-desc">Выберите, какие типы cookie вы разрешаете использовать на нашем сайте.</p>
+            <div class="cookie-option">
+                <div class="cookie-option-info">
+                    <h4>Необходимые cookie</h4>
+                    <p>Обеспечивают базовую работу сайта. Не могут быть отключены.</p>
+                </div>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="cookieEssential" checked disabled>
+                    <span class="cookie-slider"></span>
+                </label>
+            </div>
+            <div class="cookie-option">
+                <div class="cookie-option-info">
+                    <h4>Аналитические cookie</h4>
+                    <p>Помогают анализировать использование сайта (Яндекс.Метрика).</p>
+                </div>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="cookieAnalytical">
+                    <span class="cookie-slider"></span>
+                </label>
+            </div>
+            <div class="cookie-option">
+                <div class="cookie-option-info">
+                    <h4>Функциональные cookie</h4>
+                    <p>Запоминают ваши настройки (фильтры, тема оформления).</p>
+                </div>
+                <label class="cookie-switch">
+                    <input type="checkbox" id="cookieFunctional">
+                    <span class="cookie-slider"></span>
+                </label>
+            </div>
+            <div class="cookie-settings-buttons">
+                <button id="saveCookieSettings" class="cookie-btn-save">💾 Сохранить настройки</button>
+                <button id="acceptAllCookies" class="cookie-btn-accept-all">✅ Принять все</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для написания отзыва -->
+    <div id="reviewModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>✍️ Написать отзыв о сервере</h3>
+            <form id="reviewForm">
+                <input type="hidden" id="reviewServerId">
+                <div class="form-group">
+                    <label>Ваше имя *</label>
+                    <input type="text" id="reviewAuthor" required placeholder="Как вас называть?" maxlength="50">
+                </div>
+                <div class="form-group">
+                    <label>Оценка *</label>
+                    <div class="stars">
+                        <span data-rating="1">☆</span>
+                        <span data-rating="2">☆</span>
+                        <span data-rating="3">☆</span>
+                        <span data-rating="4">☆</span>
+                        <span data-rating="5">☆</span>
+                    </div>
+                    <input type="hidden" id="reviewRating" required>
+                </div>
+                <div class="form-group">
+                    <label>Заголовок отзыва *</label>
+                    <input type="text" id="reviewTitle" required placeholder="Кратко о вашем опыте" maxlength="100">
+                </div>
+                <div class="form-group">
+                    <label>Текст отзыва *</label>
+                    <textarea id="reviewContent" rows="4" required placeholder="Расскажите подробнее о сервере..." maxlength="1520"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Плюсы</label>
+                    <textarea id="reviewPros" rows="2" placeholder="Что вам понравилось?" maxlength="300"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Минусы</label>
+                    <textarea id="reviewCons" rows="2" placeholder="Что можно улучшить?" maxlength="300"></textarea>
+                </div>
+                <button type="submit" class="btn-submit">📨 Отправить отзыв</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Модальное окно для просмотра отзывов -->
+    <div id="reviewsListModal" class="modal">
+        <div class="modal-content modal-reviews">
+            <span class="close-reviews">&times;</span>
+            <h3 id="reviewsModalTitle">📝 Отзывы о сервере</h3>
+            <div id="reviewsModalList" class="reviews-modal-list"></div>
+            <div id="reviewsModalPagination" class="pagination"></div>
+        </div>
+    </div>
+
+    <!-- Панель сравнения -->
+    <div id="comparePanel" class="compare-panel" style="display: none;">
+        <div class="compare-panel-content">
+            <div class="compare-header">
+                <h4>📊 Сравнение серверов</h4>
+                <button id="closeCompare" class="compare-close" aria-label="Закрыть">✖</button>
+            </div>
+            <div id="compareList" class="compare-list"></div>
+            <button id="showCompareModal" class="compare-btn">Сравнить выбранные</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно сравнения -->
+    <div id="compareModal" class="modal">
+        <div class="modal-content modal-compare">
+            <span class="close-compare">&times;</span>
+            <h3>📊 Сравнение серверов</h3>
+            <div id="compareTable" class="compare-table-container"></div>
+        </div>
+    </div>
+
+    <!-- Футер -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">🏰 База серверов Lineage 2</div>
+                <div class="footer-description">Самая полная база серверов Lineage 2 с актуальной информацией, рейтингами и отзывами игроков. Ежедневное обновление данных.</div>
+                <div class="footer-links">
+                    <a href="/about">О проекте</a>
+                    <a href="/top-servers">🏆 Топ серверы</a>
+                    <a href="/new-servers">🆕 Новые серверы</a>
+                    <a href="/all-servers">📋 Все серверы</a>
+                    <a href="/vip-servers">⭐ VIP серверы</a>
+                    <a href="/pvp-servers">⚔️ PvP серверы</a>
+                    <a href="/download">📥 Скачать клиент</a>
+                    <a href="/servers/scryde">Scryde L2</a>
+                    <a href="/servers/main">Main L2</a>
+                    <a href="/servers/lu4">LU4 L2</a>
+                    <a href="/servers/asterios">Asterios L2</a>
+                    <a href="/servers/eglobal">Eglobal L2</a>
+                    <a href="/servers/legacy">Legacy L2</a>
+                    <a href="/privacy">Политика конфиденциальности</a>
+                    <a href="/terms">Пользовательское соглашение</a>
+                    <a href="/disclaimer">Отказ от ответственности</a>
+                    <a href="/dmca">DMCA</a>
+                    <a href="/cookies">Политика cookies</a>
+                    <a href="/contacts">Контакты</a>
+                </div>
+                <div class="copyright">© 2026 База серверов Lineage 2. Все права защищены.<br>Lineage 2 является зарегистрированной торговой маркой NCSoft Corporation.</div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/js/main.js" defer></script>
+</body>
+</html>
