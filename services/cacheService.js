@@ -41,10 +41,14 @@ function cachePage(ttl = config.CACHE_TTL) {
 }
 
 // Удаление конкретного ключа из кэша
-function cacheDelete(key) {
-    pageCache.del(key);
-    console.log(`[CACHE] Deleted key: ${key}`);
+function deleteCache(key) {
+    const deleted = pageCache.del(key);
+    console.log(`[CACHE] Deleted key: ${key}, success: ${deleted}`);
+    return deleted;
 }
+
+// Алиас для метода delete (для обратной совместимости)
+const deleteKey = deleteCache;
 
 // Функция инвалидации кэша по паттерну
 function invalidateCache(pattern) {
@@ -56,7 +60,6 @@ function invalidateCache(pattern) {
         console.log(`[CACHE] Invalidated ${matchedKeys.length} keys matching: ${pattern}`);
     }
     
-    // Также инвалидируем API кэш
     const apiKeys = apiCache.keys();
     const matchedApiKeys = apiKeys.filter(key => key.includes(pattern));
     if (matchedApiKeys.length > 0) {
@@ -85,13 +88,11 @@ function flushCache() {
     console.log('[CACHE] Full cache flushed');
 }
 
-// Алиас для обратной совместимости
-const deleteCache = cacheDelete;
-
 module.exports = {
     cachePage,
-    cacheDelete,
+    delete: deleteCache,      // <-- ЭТО ГЛАВНОЕ ДЛЯ РАБОТЫ ratingService
     deleteCache,
+    deleteKey,
     invalidateCache,
     invalidateServerCache,
     flushCache,
