@@ -6,6 +6,7 @@ const reviewController = require('../controllers/reviewController');
 const dmcaController = require('../controllers/dmcaController');
 const authController = require('../controllers/authController');
 const { apiLimiter, reviewLimiter } = require('../middleware/rateLimit');
+const { uploadLogo } = require('../middleware/upload');
 
 // =============== Публичные API ===============
 
@@ -19,6 +20,11 @@ router.post('/reviews/:reviewId/helpful', reviewController.markHelpful);
 
 // DMCA
 router.post('/dmca/submit', dmcaController.submit);
+
+// Теги и категории (публичные)
+router.get('/tags', serverController.getTags);
+router.get('/servers/tag/:tag', serverController.getByTag);
+router.get('/servers/category/:category', serverController.getByCategory);
 
 // Статистика
 router.get('/stats/servers', async (req, res) => {
@@ -38,11 +44,11 @@ router.post('/admin/login', authController.login);
 router.get('/admin/check-auth', authController.checkAuth);
 router.post('/logout', authController.logout);
 
-// CRUD серверов
+// CRUD серверов (только для админов)
 router.get('/admin/servers', authController.requireAuth, serverController.getAllAdmin);
 router.get('/admin/servers/:id', authController.requireAuth, serverController.getOne);
-router.post('/servers', authController.requireAuth, serverController.create);
-router.put('/servers/:id', authController.requireAuth, serverController.update);
+router.post('/servers', authController.requireAuth, uploadLogo, serverController.create);
+router.put('/servers/:id', authController.requireAuth, uploadLogo, serverController.update);
 router.delete('/servers/:id', authController.requireAuth, serverController.deleteServer);
 
 // Управление отзывами

@@ -16,15 +16,11 @@ async function login(req, res) {
             return res.status(401).json({ error: 'Неверный логин или пароль' });
         }
         
-        // Обновляем время последнего входа
-        await User.findByIdAndUpdate(user._id, { lastLogin: new Date() });
-        
         req.session.user = { 
             id: user._id, 
             username: user.username, 
             role: user.role 
         };
-        await req.session.save();
         
         res.json({ 
             success: true, 
@@ -36,7 +32,7 @@ async function login(req, res) {
 }
 
 function checkAuth(req, res) {
-    if (req.session.user) {
+    if (req.session && req.session.user) {
         res.json({ authenticated: true, user: req.session.user });
     } else {
         res.status(401).json({ authenticated: false });
@@ -49,18 +45,9 @@ function logout(req, res) {
     res.json({ success: true });
 }
 
-function requireAuth(req, res, next) {
-    if (!req.session.user) {
+module.exports = { login, checkAuth, logout, requireAuth: (req, res, next) => {
+    if (!req.session || !req.session.user) {
         return res.status(401).json({ error: 'Unauthorized' });
     }
     next();
-}
-
-function requireAdmin(req, res, next) {
-    if (!req.session.user || req.session.user.role !== 'admin') {
-        return res.status(403).json({ error: 'Forbidden' });
-    }
-    next();
-}
-
-module.exports = { login, checkAuth, logout, requireAuth, requireAdmin };
+} };
