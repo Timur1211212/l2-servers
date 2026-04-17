@@ -6,10 +6,14 @@ const cookieParser = require('cookie-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const helmet = require('helmet');
+const http = require('http');  // ← ДОБАВИТЬ ЭТУ СТРОКУ
+const https = require('https'); // ← ДОБАВИТЬ ЭТУ СТРОКУ
 require('dotenv').config();
 
 const config = require('./config');
 const { connectDB } = require('./config/database');
+const sessionConfig = require('./config/session');
+const sslConfig = require('./config/ssl');
 const { preventSqlInjection, preventNoSqlInjection, bodySizeLimiter, securityTxt } = require('./middleware/security');
 const { pageLimiter } = require('./middleware/rateLimit');
 
@@ -22,7 +26,7 @@ const app = express();
 
 // =============== MIDDLEWARE ===============
 
-// Helmet - безопасность (должен быть первым)
+// Helmet - безопасность
 app.use(helmet({
     contentSecurityPolicy: false,
     xFrameOptions: { action: 'sameorigin' }
@@ -54,22 +58,7 @@ app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(cookieParser());
 
 // Сессии
-app.use(session({
-    name: 'l2session',
-    secret: config.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    cookie: { 
-        secure: config.isProd,
-        httpOnly: true,
-        sameSite: 'lax',
-        maxAge: 24 * 60 * 60 * 1000
-    },
-    store: MongoStore.create({ 
-        mongoUrl: config.MONGODB_URI,
-        ttl: 24 * 60 * 60
-    })
-}));
+app.use(session(sessionConfig));
 
 // Лимит запросов для страниц
 app.use(pageLimiter);
@@ -108,7 +97,6 @@ app.use((err, req, res, next) => {
 });
 
 // =============== ЗАПУСК ===============
-// =============== ЗАПУСК ===============
 const startServer = async () => {
     try {
         await connectDB();
@@ -133,7 +121,6 @@ const startServer = async () => {
                 res.writeHead(301, { Location: `https://${req.headers.host}${req.url}` });
                 res.end();
             } else {
-                // Если HTTPS не настроен, просто отвечаем
                 res.writeHead(200, { 'Content-Type': 'text/plain' });
                 res.end('Server is running');
             }
