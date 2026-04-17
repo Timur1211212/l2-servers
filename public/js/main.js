@@ -24,14 +24,51 @@
     const reviewsModalTitle = document.getElementById('reviewsModalTitle');
     const reviewsModalList = document.getElementById('reviewsModalList');
     const reviewsModalPagination = document.getElementById('reviewsModalPagination');
+    const reviewModal = document.getElementById('reviewModal');
+    let currentServerId = null;
     
-    // =============== ФУНКЦИИ ===============
-    function sendYandexGoal(goalName, params = {}) {
-        if (typeof ym !== 'undefined') {
-            ym(106160512, 'reachGoal', goalName, params);
-        }
+    // =============== ВСПОМОГАТЕЛЬНЫЕ ФУНКЦИИ ===============
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
     }
     
+    function renderStars(rating) {
+        if (!rating || rating === 0) return '☆☆☆☆☆';
+        const full = Math.floor(rating);
+        let stars = '';
+        for (let i = 0; i < full; i++) stars += '★';
+        for (let i = stars.length; i < 5; i++) stars += '☆';
+        return stars;
+    }
+    
+    function getReviewWord(count) {
+        if (count % 10 === 1 && count % 100 !== 11) return 'отзыв';
+        if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'отзыва';
+        return 'отзывов';
+    }
+    
+    function getStatusClass(status) {
+        if (status === 'VIP') return 'badge-vip';
+        if (status === 'Почти VIP') return 'badge-almost';
+        return 'badge-normal';
+    }
+    
+    function showToast(message, type = 'success') {
+        const toast = document.createElement('div');
+        toast.className = 'toast-notification';
+        toast.textContent = message;
+        toast.style.background = type === 'error' ? '#ff4757' : (type === 'info' ? '#6c5ce7' : '#00b894');
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+    
+    function lockBodyScroll() { document.body.classList.add('modal-open'); }
+    function unlockBodyScroll() { document.body.classList.remove('modal-open'); }
+    
+    // =============== ОСНОВНЫЕ ФУНКЦИИ ===============
     function showLoading() {
         if (serversList) {
             serversList.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Загрузка серверов...</div></div>';
@@ -98,34 +135,6 @@
         return servers.slice(start, start + perPage);
     }
     
-    function renderStars(rating) {
-        if (!rating || rating === 0) return '☆☆☆☆☆';
-        const full = Math.floor(rating);
-        let stars = '';
-        for (let i = 0; i < full; i++) stars += '★';
-        for (let i = stars.length; i < 5; i++) stars += '☆';
-        return stars;
-    }
-    
-    function getStatusClass(status) {
-        if (status === 'VIP') return 'badge-vip';
-        if (status === 'Почти VIP') return 'badge-almost';
-        return 'badge-normal';
-    }
-    
-    function getReviewWord(count) {
-        if (count % 10 === 1 && count % 100 !== 11) return 'отзыв';
-        if ([2, 3, 4].includes(count % 10) && ![12, 13, 14].includes(count % 100)) return 'отзыва';
-        return 'отзывов';
-    }
-    
-    function escapeHtml(text) {
-        if (!text) return '';
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-    }
-    
     function updateMetaTags() {
         let title = 'Рейтинг серверов Lineage 2 2026';
         let description = 'Актуальный рейтинг серверов Lineage 2 2026';
@@ -137,6 +146,7 @@
         if (metaDesc) metaDesc.setAttribute('content', description);
     }
     
+    // =============== СРАВНЕНИЕ ===============
     function addToCompare(serverId) {
         const server = allServers.find(s => s._id === serverId);
         if (!server) return;
@@ -212,6 +222,86 @@
         }
     }
     
+    // =============== ОТЗЫВЫ ===============
+    function openReviewModal(serverId) {
+        currentServerId = serverId;
+        const reviewServerId = document.getElementById('reviewServerId');
+        if (reviewServerId) reviewServerId.value = serverId;
+        
+        // Очистка формы
+        const reviewAuthor = document.getElementById('reviewAuthor');
+        const reviewTitle = document.getElementById('reviewTitle');
+        const reviewContent = document.getElementById('reviewContent');
+        const reviewPros = document.getElementById('reviewPros');
+        const reviewCons = document.getElementById('reviewCons');
+        const reviewRating = document.getElementById('reviewRating');
+        if (reviewAuthor) reviewAuthor.value = '';
+        if (reviewTitle) reviewTitle.value = '';
+        if (reviewContent) reviewContent.value = '';
+        if (reviewPros) reviewPros.value = '';
+        if (reviewCons) reviewCons.value = '';
+        if (reviewRating) reviewRating.value = '';
+        
+        // Сброс звёзд
+        const stars = document.querySelectorAll('.stars span');
+        stars.forEach(star => {
+            star.classList.remove('active');
+            star.textContent = '☆';
+        });
+        
+        if (reviewModal) reviewModal.style.display = 'flex';
+        lockBodyScroll();
+    }
+    
+    function closeReviewModal() {
+        if (reviewModal) reviewModal.style.display = 'none';
+        unlockBodyScroll();
+    }
+    
+    function openReviewsModal(serverId, serverName) {
+        currentReviewsServerId = serverId;
+        currentReviewsPage = 1;
+        if (reviewsModalTitle) reviewsModalTitle.innerHTML = `📝 Отзывы о "${escapeHtml(serverName)}"`;
+        if (reviewsModal) reviewsModal.style.display = 'flex';
+        lockBodyScroll();
+        loadReviewsModal(serverId, 1);
+    }
+    
+    async function loadReviewsModal(serverId, page = 1) {
+        if (reviewsModalList) reviewsModalList.innerHTML = '<div class="loading">Загрузка...</div>';
+        try {
+            const response = await fetch(`/api/servers/${serverId}/reviews?page=${page}`);
+            const data = await response.json();
+            if (!reviewsModalList) return;
+            if (!data.reviews.length) {
+                reviewsModalList.innerHTML = '<div class="empty">Нет отзывов</div>';
+                return;
+            }
+            reviewsModalList.innerHTML = data.reviews.map(review => `
+                <div class="review-card">
+                    <div class="review-header">
+                        <span class="review-author">${escapeHtml(review.authorName)}</span>
+                        <span class="review-rating">${renderStars(review.rating)}</span>
+                        <span class="review-date">${new Date(review.createdAt).toLocaleDateString()}</span>
+                    </div>
+                    <div class="review-title">${escapeHtml(review.title)}</div>
+                    <div class="review-content">${escapeHtml(review.content)}</div>
+                    ${review.pros ? `<div class="review-pros">✅ Плюсы: ${escapeHtml(review.pros)}</div>` : ''}
+                    ${review.cons ? `<div class="review-cons">❌ Минусы: ${escapeHtml(review.cons)}</div>` : ''}
+                </div>
+            `).join('');
+        } catch (error) {
+            console.error(error);
+            if (reviewsModalList) reviewsModalList.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+        }
+    }
+    
+    function closeReviewsModal() {
+        if (reviewsModal) reviewsModal.style.display = 'none';
+        unlockBodyScroll();
+    }
+    
+    // =============== ОТРИСОВКА КАРТОЧЕК ===============
     function renderServerCard(server) {
         const statusClass = getStatusClass(server.status);
         const avgRating = server.rating?.average || 0;
@@ -237,12 +327,13 @@
                         <div class="review-summary">
                             <div class="rating-stars">${renderStars(avgRating)}</div>
                             <div class="review-count">${reviewCount} ${getReviewWord(reviewCount)}</div>
-                            <button class="btn-write-review" onclick="openReviewModal('${server._id}')" title="Написать отзыв">✍️</button>
+                            <button class="btn-write-review" onclick="window.openReviewModal('${server._id}')" title="Написать отзыв">✍️</button>
                         </div>
                         <div class="server-actions">
-                            <button class="btn-compare" onclick="addToCompare('${server._id}')" ${compareBtnDisabled}>${compareBtnText}</button>
+                            <button class="btn-compare" onclick="window.addToCompare('${server._id}')" ${compareBtnDisabled}>${compareBtnText}</button>
                             <a href="${escapeHtml(server.website)}" target="_blank" class="btn-play">Играть →</a>
                         </div>
+                        <button class="btn-reviews" onclick="window.openReviewsModal('${server._id}', '${escapeHtml(server.name)}')">📝 Читать отзывы</button>
                     </div>
                 </div>
             </div>
@@ -270,7 +361,7 @@
         if (totalPages > 1) {
             let paginationHtml = '<div class="pagination">';
             for (let i = 1; i <= totalPages; i++) {
-                paginationHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="changePage(${i})">${i}</button>`;
+                paginationHtml += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="window.changePage(${i})">${i}</button>`;
             }
             paginationHtml += '</div>';
             serversList.insertAdjacentHTML('afterend', paginationHtml);
@@ -281,74 +372,6 @@
         currentPage = page;
         render();
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-    
-    function lockBodyScroll() { document.body.classList.add('modal-open'); }
-    function unlockBodyScroll() { document.body.classList.remove('modal-open'); }
-    
-    function openReviewsModal(serverId, serverName) {
-        currentReviewsServerId = serverId;
-        if (reviewsModalTitle) reviewsModalTitle.innerHTML = `📝 Отзывы о "${escapeHtml(serverName)}"`;
-        if (reviewsModal) reviewsModal.style.display = 'flex';
-        lockBodyScroll();
-        loadReviewsModal(serverId, 1);
-    }
-    
-    async function loadReviewsModal(serverId, page = 1) {
-        if (reviewsModalList) reviewsModalList.innerHTML = '<div class="loading">Загрузка...</div>';
-        try {
-            const response = await fetch(`/api/servers/${serverId}/reviews?page=${page}`);
-            const data = await response.json();
-            if (!reviewsModalList) return;
-            if (!data.reviews.length) {
-                reviewsModalList.innerHTML = '<div class="empty">Нет отзывов</div>';
-                return;
-            }
-            reviewsModalList.innerHTML = data.reviews.map(review => `
-                <div class="review-card">
-                    <div class="review-header">
-                        <span class="review-author">${escapeHtml(review.authorName)}</span>
-                        <span class="review-rating">${renderStars(review.rating)}</span>
-                        <span class="review-date">${new Date(review.createdAt).toLocaleDateString()}</span>
-                    </div>
-                    <div class="review-title">${escapeHtml(review.title)}</div>
-                    <div class="review-content">${escapeHtml(review.content)}</div>
-                </div>
-            `).join('');
-        } catch (error) {
-            console.error(error);
-            if (reviewsModalList) reviewsModalList.innerHTML = '<div class="empty">Ошибка загрузки</div>';
-        }
-    }
-    
-    function closeReviewsModal() {
-        if (reviewsModal) reviewsModal.style.display = 'none';
-        unlockBodyScroll();
-    }
-    
-    const reviewModal = document.getElementById('reviewModal');
-    let currentServerId = null;
-    
-    function openReviewModal(serverId) {
-        currentServerId = serverId;
-        const reviewServerId = document.getElementById('reviewServerId');
-        if (reviewServerId) reviewServerId.value = serverId;
-        if (reviewModal) reviewModal.style.display = 'flex';
-        lockBodyScroll();
-    }
-    
-    function closeReviewModal() {
-        if (reviewModal) reviewModal.style.display = 'none';
-        unlockBodyScroll();
-    }
-    
-    function showToast(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = 'toast-notification';
-        toast.textContent = message;
-        toast.style.background = type === 'error' ? '#ff4757' : (type === 'info' ? '#6c5ce7' : '#00b894');
-        document.body.appendChild(toast);
-        setTimeout(() => toast.remove(), 2000);
     }
     
     // =============== ИНИЦИАЛИЗАЦИЯ ===============
@@ -393,19 +416,82 @@
         if (e.target === document.getElementById('compareModal')) closeCompareModal();
     });
     
+    // =============== ЭКСПОРТ ФУНКЦИЙ В ГЛОБАЛЬНЫЙ ОБЪЕКТ ===============
+    window.openReviewModal = openReviewModal;
+    window.closeReviewModal = closeReviewModal;
+    window.openReviewsModal = openReviewsModal;
+    window.closeReviewsModal = closeReviewsModal;
+    window.addToCompare = addToCompare;
+    window.removeFromCompare = removeFromCompare;
+    window.showCompareModal = showCompareModal;
+    window.closeCompareModal = closeCompareModal;
+    window.changePage = changePage;
+    
     // Запуск
     if (document.getElementById('serversList')) {
         loadServers();
     }
     
-    // Экспорт глобальных функций
-    window.changePage = changePage;
-    window.openReviewsModal = openReviewsModal;
-    window.openReviewModal = openReviewModal;
-    window.closeReviewsModal = closeReviewsModal;
-    window.closeReviewModal = closeReviewModal;
-    window.addToCompare = addToCompare;
-    window.removeFromCompare = removeFromCompare;
-    window.showCompareModal = showCompareModal;
-    window.closeCompareModal = closeCompareModal;
+    // Инициализация звезд для отзыва
+    const starsContainer = document.querySelector('.stars');
+    if (starsContainer) {
+        starsContainer.addEventListener('click', (e) => {
+            const star = e.target.closest('span');
+            if (star && star.dataset.rating) {
+                const rating = parseInt(star.dataset.rating);
+                const reviewRating = document.getElementById('reviewRating');
+                if (reviewRating) reviewRating.value = rating;
+                const allStars = document.querySelectorAll('.stars span');
+                allStars.forEach((s, i) => {
+                    if (i < rating) {
+                        s.classList.add('active');
+                        s.textContent = '★';
+                    } else {
+                        s.classList.remove('active');
+                        s.textContent = '☆';
+                    }
+                });
+            }
+        });
+    }
+    
+    // Отправка отзыва
+    const reviewForm = document.getElementById('reviewForm');
+    if (reviewForm) {
+        reviewForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const ratingInput = document.getElementById('reviewRating');
+            const rating = ratingInput ? ratingInput.value : null;
+            if (!rating) {
+                alert('Поставьте оценку серверу!');
+                return;
+            }
+            const data = {
+                authorName: document.getElementById('reviewAuthor')?.value || '',
+                rating: parseInt(rating),
+                title: document.getElementById('reviewTitle')?.value || '',
+                content: document.getElementById('reviewContent')?.value || '',
+                pros: document.getElementById('reviewPros')?.value || '',
+                cons: document.getElementById('reviewCons')?.value || ''
+            };
+            try {
+                const response = await fetch(`/api/servers/${currentServerId}/reviews`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+                if (result.success) {
+                    alert('Спасибо за отзыв! Он будет опубликован после модерации.');
+                    closeReviewModal();
+                    await loadServers();
+                } else {
+                    alert(result.error || 'Ошибка отправки');
+                }
+            } catch (error) {
+                console.error('Error submitting review:', error);
+                alert('Ошибка отправки отзыва');
+            }
+        });
+    }
 })();
