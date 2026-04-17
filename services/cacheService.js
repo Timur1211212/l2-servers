@@ -2,57 +2,88 @@
 const NodeCache = require('node-cache');
 const config = require('../config');
 
-class CacheService {
-    constructor() {
-        this.cache = new NodeCache({ 
-            stdTTL: config.CACHE_TTL, 
-            checkperiod: config.CACHE_CHECK_PERIOD 
-        });
-    }
-    
-    get(key) {
-        return this.cache.get(key);
-    }
-    
-    set(key, value, ttl = config.CACHE_TTL) {
-        this.cache.set(key, value, ttl);
-    }
-    
-    delete(key) {
-        this.cache.del(key);
-    }
-    
-    flush() {
-        this.cache.flushAll();
-    }
-    
-    // Инвалидация по паттерну
-    deletePattern(pattern) {
-        const keys = this.cache.keys();
-        const matchedKeys = keys.filter(key => key.includes(pattern));
-        this.cache.del(matchedKeys);
-    }
-    
-    // Middleware для кэширования ответов
-    cache(ttl = config.CACHE_TTL) {
-        return (req, res, next) => {
-            const key = `page:${req.originalUrl}`;
-            const cached = this.get(key);
-            
-            if (cached) {
-                return res.send(cached);
+// Основной кэш для страниц
+const pageCache = new NodeCache({ 
+    stdTTL: config.CACHE_TTL, 
+    checkperiod: config.CACHE_CHECK_PERIOD,
+    useClones: false
+});
+
+// Кэш для API запросов
+const apiCache = new NodeCache({ 
+    stdTTL: 300,
+    checkperiod: 60
+});
+
+// Middleware для кэширования страниц
+function cachePage(ttl = config.CACHE_TTL) {
+    return (req, res, next) => {
+        if (req.session && req.session.user) {
+            return next();
+        }
+        
+        const cacheKey = `page:${req.originalUrl}`;
+        const cached = pageCache.get(cacheKey);
+        
+        if (cached) {
+            return res.send(cached);
+        }
+        
+        const originalSend = res.send;
+        res.send = function(body) {
+            if (res.statusCode === 200 && typeof body === 'string') {
+                pageCache.set(cacheKey, body, ttl);
             }
-            
-            const originalSend = res.send;
-            res.send = (body) => {
-                if (res.statusCode === 200) {
-                    this.set(key, body, ttl);
-                }
-                originalSend.call(res, body);
-            };
-            next();
+            originalSend.call(this, body);
         };
+        next();
+    };
+}
+
+// Функция инвалидации кэша по паттерну
+function invalidateCache(pattern) {
+    const keys = pageCache.keys();
+    const matchedKeys = keys.filter(key => key.includes(pattern));
+    
+    if (matchedKeys.length > 0) {
+        pageCache.del(matchedKeys);
+        console.log(`[CACHE] Invalidated ${matchedKeys.length} keys matching: ${pattern}`);
+    }
+    
+    // Также инвалидируем API кэш
+    const apiKeys = apiCache.keys();
+    const matchedApiKeys = apiKeys.filter(key => key.includes(pattern));
+    if (matchedApiKeys.length > 0) {
+        apiCache.del(matchedApiKeys);
     }
 }
 
-module.exports = new CacheService();
+// Функция инвалидации кэша сервера
+function invalidateServerCache(slug) {
+    invalidateCache(`/server/${slug}`);
+    invalidateCache('/top-servers');
+    invalidateCache('/new-servers');
+    invalidateCache('/all-servers');
+    invalidateCache('/vip-servers');
+    invalidateCache('/pvp-servers');
+    invalidateCache('/version/interlude');
+    invalidateCache('/version/high-five');
+    invalidateCache('/version/classic');
+    invalidateCache('/version/essence');
+}
+
+// Полная очистка кэша
+function flushCache() {
+    pageCache.flushAll();
+    apiCache.flushAll();
+    console.log('[CACHE] Full cache flushed');
+}
+
+module.exports = {
+    cachePage,
+    invalidateCache,
+    invalidateServerCache,
+    flushCache,
+    pageCache,
+    apiCache
+};
