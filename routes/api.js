@@ -62,4 +62,66 @@ router.get('/admin/dmca/:id', authController.requireAuth, dmcaController.getOne)
 router.put('/admin/dmca/:id', authController.requireAuth, dmcaController.update);
 router.delete('/admin/dmca/:id', authController.requireAuth, dmcaController.deleteComplaint);
 
+// routes/api.js (добавить в конец файла, перед module.exports)
+
+// =============== ПОИСК ПО ТЕГАМ И КАТЕГОРИЯМ ===============
+router.get('/search', async (req, res) => {
+    try {
+        const { q, tag, category, version, status, minRating } = req.query;
+        let filter = { active: true };
+        
+        if (q) {
+            filter.$or = [
+                { name: { $regex: q, $options: 'i' } },
+                { description: { $regex: q, $options: 'i' } },
+                { tags: { $in: [new RegExp(q, 'i')] } }
+            ];
+        }
+        
+        if (tag) {
+            filter.tags = { $in: [tag] };
+        }
+        
+        if (category) {
+            filter.categories = { $in: [category] };
+        }
+        
+        if (version) {
+            filter.version = { $regex: version, $options: 'i' };
+        }
+        
+        if (status && status !== 'all') {
+            filter.status = status;
+        }
+        
+        if (minRating) {
+            filter['rating.average'] = { $gte: parseFloat(minRating) };
+        }
+        
+        const servers = await Server.find(filter)
+            .sort({ 'rating.average': -1 })
+            .limit(50)
+            .lean();
+            
+        res.json({ success: true, servers, count: servers.length });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get('/tags/popular', async (req, res) => {
+    try {
+        const tags = await Server.aggregate([
+            { $match: { active: true } },
+            { $unwind: '$tags' },
+            { $group: { _id: '$tags', count: { $sum: 1 } } },
+            { $sort: { count: -1 } },
+            { $limit: 20 }
+        ]);
+        res.json({ success: true, tags });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

@@ -34,11 +34,16 @@ function sendYandexGoal(goalName, params = {}) {
     }
 }
 
-// =============== ЗАГРУЗКА СЕРВЕРОВ ===============
-async function loadServers() {
+// =============== ПОКАЗАТЬ ЗАГРУЗКУ ===============
+function showLoading() {
     if (serversList) {
         serversList.innerHTML = '<div class="loading"><div class="loading-spinner"></div><div>Загрузка серверов...</div></div>';
     }
+}
+
+// =============== ЗАГРУЗКА СЕРВЕРОВ ===============
+async function loadServers() {
+    showLoading();
     
     try {
         const response = await fetch('/api/servers');
@@ -49,6 +54,35 @@ async function loadServers() {
         console.error('Error:', error);
         if (serversList) {
             serversList.innerHTML = '<div class="empty">❌ Ошибка загрузки серверов. Пожалуйста, обновите страницу.</div>';
+        }
+    }
+}
+
+// =============== ПОИСК СЕРВЕРОВ (НОВАЯ ФУНКЦИЯ) ===============
+async function searchServers() {
+    const searchQuery = document.getElementById('searchInput')?.value || '';
+    const statusFilter = document.querySelector('.filter-btn.active')?.dataset.status || 'all';
+    
+    showLoading();
+    
+    try {
+        let url = `/api/search?q=${encodeURIComponent(searchQuery)}&status=${statusFilter}`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (data.success) {
+            allServers = data.servers;
+            if (totalServersSpan) totalServersSpan.textContent = allServers.length;
+            currentPage = 1;
+            render();
+        } else {
+            throw new Error(data.error);
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        if (serversList) {
+            serversList.innerHTML = '<div class="empty">❌ Ошибка поиска. Попробуйте позже.</div>';
         }
     }
 }
@@ -66,7 +100,8 @@ function getFilteredServers() {
         filtered = filtered.filter(s => 
             s.name.toLowerCase().includes(search) ||
             (s.version && s.version.toLowerCase().includes(search)) ||
-            (s.description && s.description.toLowerCase().includes(search))
+            (s.description && s.description.toLowerCase().includes(search)) ||
+            (s.tags && s.tags.some(tag => tag.toLowerCase().includes(search)))
         );
     }
     
@@ -116,10 +151,10 @@ function updateMetaTags() {
     
     if (currentFilter === 'VIP') {
         title = 'VIP серверы Lineage 2 2026 | Топовые L2 серверы с высоким рейтингом';
-        description = 'Лучшие VIP серверы Lineage 2 2026. Высокая стабильность, большой онлайн, лучшие условия для игры. Рейтинг VIP серверов L2 с отзывами.';
+        description = 'Лучшие VIP серверы Lineage 2 2026. Высокая стабильность, большой онлайн, лучшие условия для игры.';
     } else if (currentFilter === 'Почти VIP') {
         title = 'Почти VIP серверы Lineage 2 2026 | Качественные L2 серверы';
-        description = 'Качественные серверы Lineage 2 с отличными условиями. Рейтинг и отзывы игроков. Найди свой идеальный сервер для комфортной игры!';
+        description = 'Качественные серверы Lineage 2 с отличными условиями. Рейтинг и отзывы игроков.';
     }
     
     if (currentSearch) {
@@ -239,7 +274,7 @@ function showCompareModal() {
             
             tableHtml += `<td class="field-value">${value}</td>`;
         }
-        tableHtml += `</tr>`;
+        tableHtml += `</td>`;
     }
     
     tableHtml += `</tbody></table>`;
@@ -267,28 +302,53 @@ function renderServerCard(server) {
     
     return `
         <div class="server-card" data-server-id="${server._id}">
-            <a href="/server/${server._id}" class="server-name-link">
-                <h3 class="server-name">${escapeHtml(server.name)}</h3>
-            </a>
-            <div class="server-website">
-                <a href="${escapeHtml(server.website)}" target="_blank" rel="nofollow noopener external">🌐 ${escapeHtml(server.website)}</a>
+            <div class="server-card-content">
+                ${server.logo ? `
+                    <div class="server-logo">
+                        <img src="${escapeHtml(server.logo)}" alt="${escapeHtml(server.name)}" loading="lazy">
+                    </div>
+                ` : `
+                    <div class="server-logo placeholder">
+                        <span>🎮</span>
+                    </div>
+                `}
+                
+                <div class="server-details">
+                    <a href="/server/${server.slug || server._id}" class="server-name-link">
+                        <h3 class="server-name">${escapeHtml(server.name)}</h3>
+                    </a>
+                    
+                    <div class="server-meta">
+                        <span class="badge ${statusClass}">${escapeHtml(server.status)}</span>
+                        <span class="server-version">📌 ${escapeHtml(server.version || 'Interlude')}</span>
+                    </div>
+                    
+                    <div class="server-rates">
+                        ${server.exp ? `<span class="rate">⚡ ${escapeHtml(server.exp)}</span>` : ''}
+                        ${server.drop ? `<span class="rate">💀 ${escapeHtml(server.drop)}</span>` : ''}
+                        ${server.adena ? `<span class="rate">💰 ${escapeHtml(server.adena)}</span>` : ''}
+                    </div>
+                    
+                    ${server.tags && server.tags.length ? `
+                        <div class="server-tags">
+                            ${server.tags.slice(0, 3).map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    
+                    <div class="review-summary">
+                        <div class="rating-stars">${renderStars(avgRating)}</div>
+                        <div class="review-count">${reviewCount} ${getReviewWord(reviewCount)}</div>
+                        <button class="btn-write-review" onclick="openReviewModal('${server._id}')" title="Написать отзыв">✍️</button>
+                    </div>
+                    
+                    <div class="server-actions">
+                        <button class="btn-compare" onclick="addToCompare('${server._id}')" ${compareBtnDisabled}>
+                            ${compareBtnText}
+                        </button>
+                        <a href="${escapeHtml(server.website)}" target="_blank" class="btn-play">Играть →</a>
+                    </div>
+                </div>
             </div>
-            <div class="server-meta">
-                <span class="badge ${statusClass}">${escapeHtml(server.status)}</span>
-                <span class="server-version">📌 ${escapeHtml(server.version || 'Interlude')}</span>
-            </div>
-            
-            <div class="review-summary">
-                <div class="rating-stars">${renderStars(avgRating)}</div>
-                <div class="review-count">${reviewCount} ${getReviewWord(reviewCount)}</div>
-                <button class="btn-write-review" onclick="openReviewModal('${server._id}')">✍️ Написать отзыв</button>
-            </div>
-            
-            <div class="server-actions">
-                <button class="btn-compare" onclick="addToCompare('${server._id}')" ${compareBtnDisabled}>${compareBtnText}</button>
-                <a href="${escapeHtml(server.website)}" target="_blank" rel="nofollow noopener external" class="btn-play">🎮 Играть</a>
-            </div>
-            <button class="btn-reviews" onclick="openReviewsModal('${server._id}', '${escapeHtml(server.name)}')">📝 Читать отзывы</button>
         </div>
     `;
 }
@@ -491,19 +551,13 @@ if (reviewForm) {
             return;
         }
         
-        const authorName = document.getElementById('reviewAuthor')?.value || '';
-        const reviewTitle = document.getElementById('reviewTitle')?.value || '';
-        const reviewContent = document.getElementById('reviewContent')?.value || '';
-        const reviewPros = document.getElementById('reviewPros')?.value || '';
-        const reviewCons = document.getElementById('reviewCons')?.value || '';
-        
         const data = {
-            authorName: authorName,
+            authorName: document.getElementById('reviewAuthor')?.value || '',
             rating: parseInt(rating),
-            title: reviewTitle,
-            content: reviewContent,
-            pros: reviewPros,
-            cons: reviewCons
+            title: document.getElementById('reviewTitle')?.value || '',
+            content: document.getElementById('reviewContent')?.value || '',
+            pros: document.getElementById('reviewPros')?.value || '',
+            cons: document.getElementById('reviewCons')?.value || ''
         };
         
         try {
@@ -535,32 +589,34 @@ filterButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         filterButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        const newFilter = btn.dataset.status;
-        
-        currentFilter = newFilter;
+        currentFilter = btn.dataset.status;
         currentPage = 1;
-        render();
+        
+        // Если есть поисковый запрос, используем searchServers
+        if (currentSearch) {
+            searchServers();
+        } else {
+            loadServers();
+        }
     });
 });
 
-// =============== ПОИСК ===============
-let searchTimeout;
+// =============== ПОИСК (ОБНОВЛЕННЫЙ ОБРАБОТЧИК) ===============
 if (searchInput) {
+    let searchTimeout;
     searchInput.addEventListener('input', (e) => {
         clearTimeout(searchTimeout);
         searchTimeout = setTimeout(() => {
             currentSearch = e.target.value;
-            currentPage = 1;
-            render();
-        }, 300);
+            searchServers();
+        }, 500);
     });
     
     searchInput.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             searchInput.value = '';
             currentSearch = '';
-            currentPage = 1;
-            render();
+            loadServers();
         }
     });
 }
@@ -618,3 +674,4 @@ window.addToCompare = addToCompare;
 window.removeFromCompare = removeFromCompare;
 window.showCompareModal = showCompareModal;
 window.closeCompareModal = closeCompareModal;
+window.searchServers = searchServers;
