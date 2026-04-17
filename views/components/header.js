@@ -9,13 +9,14 @@ function renderHeader() {
                         <span class="logo-text">База серверов Lineage 2</span>
                     </a>
                     <nav class="main-nav">
-                        <a href="/" class="nav-link">🏠 Главная</a>
+                        <a href="/" class="nav-link active">🏠 Главная</a>
                         <a href="/top-servers" class="nav-link">🏆 Топ</a>
                         <a href="/new-servers" class="nav-link">🆕 Новые</a>
                         <a href="/all-servers" class="nav-link">📋 Все</a>
                         <a href="/vip-servers" class="nav-link">⭐ VIP</a>
                         <a href="/pvp-servers" class="nav-link">⚔️ PvP</a>
                         <a href="/download" class="nav-link">📥 Скачать</a>
+                        <a href="/contacts" class="nav-link">📞 Контакты</a>
                     </nav>
                 </div>
             </div>
