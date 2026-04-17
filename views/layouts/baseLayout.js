@@ -1,5 +1,7 @@
 // views/layouts/baseLayout.js
-const { escapeHtml, renderHeader, renderFooter } = require('../components/header');
+const { escapeHtml } = require('../../utils/htmlHelpers');
+const { renderHeader } = require('../components/header');
+const { renderFooter } = require('../components/footer');
 const { generateOpenGraphTags } = require('../../utils/seoHelpers');
 
 function baseLayout({ 
@@ -29,7 +31,6 @@ function baseLayout({
     ${noIndex ? '<meta name="robots" content="noindex, nofollow">' : '<meta name="robots" content="index, follow, max-image-preview:large">'}
     <link rel="canonical" href="https://zerokulasite.ru${canonical}">
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
     <link rel="stylesheet" href="/css/style.css">
     ${generateOpenGraphTags({
         type: ogType,
