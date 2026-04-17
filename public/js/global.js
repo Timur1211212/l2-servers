@@ -1,113 +1,47 @@
-// public/js/global.js
-// Глобальные функции для работы кнопок на сайте
+// public/js/global.js - Упрощенная и надежная версия
+console.log('global.js загружен');
 
+// Функция для открытия модального окна отзыва
 window.openReviewModal = function(serverId) {
-    console.log('openReviewModal called with serverId:', serverId);
-    const modal = document.getElementById('reviewModal');
-    const serverIdInput = document.getElementById('reviewServerId');
+    console.log('openReviewModal вызвана, ID сервера:', serverId);
+    alert('Функция openReviewModal вызвана! ID сервера: ' + serverId);
     
-    if (!modal) {
-        console.error('Modal element not found!');
-        return;
+    // Здесь будет ваша логика открытия модального окна
+    const modal = document.getElementById('reviewModal');
+    if (modal) {
+        const serverIdInput = document.getElementById('reviewServerId');
+        if (serverIdInput) serverIdInput.value = serverId;
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+    } else {
+        console.error('Модальное окно reviewModal не найдено!');
     }
-    
-    if (serverIdInput) serverIdInput.value = serverId;
-    
-    // Очистка формы
-    const form = document.getElementById('reviewForm');
-    if (form) form.reset();
-    
-    // Сброс звезд рейтинга
-    const stars = document.querySelectorAll('#reviewModal .stars span');
-    stars.forEach(star => {
-        star.classList.remove('active');
-        star.textContent = '☆';
-    });
-    
-    modal.style.display = 'flex';
-    document.body.classList.add('modal-open');
 };
 
-window.closeReviewModal = function() {
-    const modal = document.getElementById('reviewModal');
-    if (modal) modal.style.display = 'none';
-    document.body.classList.remove('modal-open');
-};
-
+// Функция для открытия модального окна со списком отзывов
 window.openReviewsModal = function(serverId, serverName) {
-    console.log('openReviewsModal called:', serverId, serverName);
+    console.log('openReviewsModal вызвана, сервер:', serverName, 'ID:', serverId);
+    alert('Функция openReviewsModal вызвана! Сервер: ' + serverName);
+    
+    // Здесь будет ваша логика открытия списка отзывов
     const modal = document.getElementById('reviewsListModal');
-    const title = document.getElementById('reviewsModalTitle');
-    
-    if (!modal) return;
-    if (title) title.innerHTML = `📝 Отзывы о сервере "${escapeHtml(serverName)}"`;
-    
-    modal.style.display = 'flex';
-    document.body.classList.add('modal-open');
-    
-    // Загрузка отзывов
-    window.loadReviewsList(serverId, 1);
-};
-
-window.closeReviewsModal = function() {
-    const modal = document.getElementById('reviewsListModal');
-    if (modal) modal.style.display = 'none';
-    document.body.classList.remove('modal-open');
-};
-
-window.loadReviewsList = async function(serverId, page) {
-    const container = document.getElementById('reviewsModalList');
-    if (!container) return;
-    
-    container.innerHTML = '<div class="loading">Загрузка отзывов...</div>';
-    
-    try {
-        const response = await fetch(`/api/servers/${serverId}/reviews?page=${page}`);
-        const data = await response.json();
-        
-        if (!data.reviews.length) {
-            container.innerHTML = '<div class="empty">📝 Пока нет отзывов. Будьте первым!</div>';
-            return;
-        }
-        
-        container.innerHTML = data.reviews.map(review => `
-            <div class="review-card">
-                <div class="review-header">
-                    <span class="review-author">${escapeHtml(review.authorName)}</span>
-                    <span class="review-rating">${renderStarsGlobal(review.rating)}</span>
-                    <span class="review-date">${new Date(review.createdAt).toLocaleDateString()}</span>
-                </div>
-                <div class="review-title">${escapeHtml(review.title)}</div>
-                <div class="review-content">${escapeHtml(review.content)}</div>
-                ${review.pros ? `<div class="review-pros">✅ Плюсы: ${escapeHtml(review.pros)}</div>` : ''}
-                ${review.cons ? `<div class="review-cons">❌ Минусы: ${escapeHtml(review.cons)}</div>` : ''}
-            </div>
-        `).join('');
-    } catch (error) {
-        console.error('Error loading reviews:', error);
-        container.innerHTML = '<div class="empty">❌ Ошибка загрузки отзывов</div>';
+    if (modal) {
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+    } else {
+        console.error('Модальное окно reviewsListModal не найдено!');
     }
 };
 
+// Функция для добавления в сравнение
 window.addToCompare = function(serverId) {
-    console.log('addToCompare called with serverId:', serverId);
-    // Здесь будет логика добавления в сравнение
-    alert('Функция сравнения будет добавлена позже. Сервер ID: ' + serverId);
+    console.log('addToCompare вызвана, ID сервера:', serverId);
+    alert('Функция addToCompare вызвана! ID сервера: ' + serverId);
 };
 
-// Вспомогательные функции
-function escapeHtml(text) {
-    if (!text) return '';
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function renderStarsGlobal(rating) {
-    if (!rating || rating === 0) return '☆☆☆☆☆';
-    const full = Math.floor(rating);
-    let stars = '';
-    for (let i = 0; i < full; i++) stars += '★';
-    for (let i = stars.length; i < 5; i++) stars += '☆';
-    return stars;
-}
+// Вспомогательная функция для закрытия модальных окон (на всякий случай)
+window.closeModal = function(modalId) {
+    const modal = document.getElementById(modalId);
+    if (modal) modal.style.display = 'none';
+    document.body.classList.remove('modal-open');
+};
