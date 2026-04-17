@@ -87,7 +87,6 @@ const ServerSchema = new mongoose.Schema({
 
 // Индексы для оптимизации запросов
 ServerSchema.index({ version: 1, active: 1 });
-ServerSchema.index({ slug: 1 });
 ServerSchema.index({ active: 1, 'rating.average': -1 });
 ServerSchema.index({ active: 1, createdAt: -1 });
 ServerSchema.index({ status: 1, active: 1 });
