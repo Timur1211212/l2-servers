@@ -3,6 +3,9 @@ const express = require('express');
 const router = express.Router();
 const pageController = require('../controllers/pageController');
 const cacheService = require('../middleware/cache');
+const { uploadLogo } = require('../middleware/upload');
+const authController = require('../controllers/authController');
+const serverController = require('../controllers/serverController');
 
 // =============== Основные страницы ===============
 
@@ -43,6 +46,17 @@ router.get('/cookies', pageController.cookies);
 router.get('/sitemap.xml', pageController.sitemap);
 router.get('/robots.txt', pageController.robots);
 
+// =============== API маршруты для админки (с загрузкой файлов) ===============
+
+// CRUD серверов с загрузкой логотипов
+router.post('/api/servers', authController.requireAuth, uploadLogo, serverController.create);
+router.put('/api/servers/:id', authController.requireAuth, uploadLogo, serverController.update);
+
+// Теги и категории
+router.get('/api/tags', serverController.getTags);
+router.get('/api/servers/tag/:tag', serverController.getByTag);
+router.get('/api/servers/category/:category', serverController.getByCategory);
+
 // =============== Реддиректы ===============
 
 // Редирект со старого формата URL на новый
@@ -69,5 +83,10 @@ router.get('/index.html', (req, res) => {
 router.get('/admin-main', (req, res) => {
     res.sendFile('admin-main.html', { root: './public' });
 });
+
+// API для получения списка серверов (для админки)
+router.get('/api/admin/servers', authController.requireAuth, serverController.getAllAdmin);
+router.get('/api/admin/servers/:id', authController.requireAuth, serverController.getOne);
+router.delete('/api/servers/:id', authController.requireAuth, serverController.deleteServer);
 
 module.exports = router;

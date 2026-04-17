@@ -4,14 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Админ панель</title>
+    <title>Админ панель - База серверов Lineage 2</title>
+    
+    <!-- TinyMCE WYSIWYG редактор -->
+    <script src="https://cdn.tiny.cloud/1/no-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             min-height: 100vh;
+            color: #fff;
         }
+        
+        /* Форма входа */
         .login-container {
             max-width: 400px;
             margin: 100px auto;
@@ -46,6 +53,7 @@
         }
         .error { color: #ff4757; margin-top: 15px; display: none; }
         
+        /* Админ панель */
         .admin-panel { max-width: 1400px; margin: 0 auto; padding: 20px; }
         .admin-header {
             display: flex;
@@ -57,23 +65,9 @@
             flex-wrap: wrap;
             gap: 15px;
         }
-
-        h1{
-            color: rgba(255, 255, 255, 0.736);
-        }
-
-        h3{
-            color: rgba(255, 255, 255, 0.736);
-            margin-bottom: 10px;
-        }
-
-        /* Простой вариант - только для выбранной опции */
-/* Цвет фона выпадающего списка (стрелка вниз) */
-select option {
-    padding: 10px;
-    background: #333;  /* <- Цвет фона всех опций в выпадающем списке */
-    color: white;
-}
+        h1 { color: #00b894; }
+        h3 { color: #94a3b8; margin-bottom: 10px; }
+        
         .admin-nav { display: flex; gap: 15px; flex-wrap: wrap; }
         .admin-nav button {
             padding: 10px 20px;
@@ -87,6 +81,7 @@ select option {
         .admin-section { display: none; }
         .admin-section.active { display: block; }
         
+        /* Формы */
         .server-form {
             background: rgba(255,255,255,0.05);
             padding: 20px;
@@ -98,7 +93,7 @@ select option {
             grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 15px;
         }
-        .full-width { grid-column: 1 / -1; margin-top: 20px;}
+        .full-width { grid-column: 1 / -1; margin-top: 20px; }
         input, select, textarea {
             width: 100%;
             padding: 10px;
@@ -107,10 +102,13 @@ select option {
             border-radius: 8px;
             color: white;
         }
+        select[multiple] { min-height: 120px; }
+        
         .btn-save { background: #00b894; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         .btn-delete { background: #ff4757; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         .btn-edit { background: #ffa502; color: #1a1a2e; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; }
         
+        /* Списки */
         .list-item {
             background: rgba(255,255,255,0.05);
             padding: 15px;
@@ -121,10 +119,47 @@ select option {
             flex-wrap: wrap;
             gap: 10px;
             margin-bottom: 10px;
-            color: whitesmoke;
         }
         .list-item-info h4 { color: #00b894; margin-bottom: 5px; }
         .list-item-actions { display: flex; gap: 10px; }
+        
+        /* Предпросмотр логотипа */
+        .logo-preview {
+            margin-top: 10px;
+        }
+        .logo-preview img {
+            max-width: 100px;
+            border-radius: 10px;
+            border: 1px solid #00b894;
+        }
+        
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #1a1a2e;
+            padding: 25px;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            border: 1px solid #00b894;
+        }
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            justify-content: flex-end;
+        }
     </style>
 </head>
 <body>
@@ -132,8 +167,8 @@ select option {
     <div id="loginContainer" class="login-container">
         <h2>🔐 Вход в админ панель</h2>
         <form id="loginForm">
-            <input type="text" id="username" placeholder="Логин" autocomplete="username" required>
-            <input type="password" id="password" placeholder="Пароль" autocomplete="current-password" required>
+            <input type="text" id="username" placeholder="Логин" required>
+            <input type="password" id="password" placeholder="Пароль" required>
             <button type="submit">Войти</button>
         </form>
         <div id="loginError" class="error"></div>
@@ -155,7 +190,7 @@ select option {
         <div id="serversSection" class="admin-section active">
             <div class="server-form">
                 <h3 id="formTitle">➕ Добавить сервер</h3>
-                <form id="serverForm">
+                <form id="serverForm" enctype="multipart/form-data">
                     <input type="hidden" id="serverId">
                     <div class="form-grid">
                         <input type="text" id="serverName" placeholder="Название сервера *" required>
@@ -180,10 +215,52 @@ select option {
                         <input type="text" id="serverQuest" placeholder="Quest">
                         <input type="text" id="serverQuestExp" placeholder="Quest Exp">
                     </div>
-                    <textarea id="serverDescription" rows="3" placeholder="Описание" class="full-width"></textarea>
-                    <div style="margin-top: 15px;">
-                        <button type="submit" class="btn-save">Сохранить</button>
-                        <button type="button" id="cancelEdit" class="btn-delete">Отмена</button>
+                    
+                    <!-- Теги -->
+                    <div class="form-group">
+                        <label>Теги (через запятую)</label>
+                        <input type="text" id="serverTags" placeholder="PvP, High Rate, x1000, Без доната">
+                        <small>Например: PvP, High Rate, x1000, Без доната, Новый</small>
+                    </div>
+                    
+                    <!-- Категории -->
+                    <div class="form-group">
+                        <label>Категории (Ctrl+Click для выбора нескольких)</label>
+                        <select id="serverCategories" multiple size="6">
+                            <option value="PvP">⚔️ PvP</option>
+                            <option value="PvE">🏰 PvE</option>
+                            <option value="RP">🎭 RP</option>
+                            <option value="Fun">🎉 Fun</option>
+                            <option value="Hardcore">💀 Hardcore</option>
+                            <option value="Low Rate">🐢 Low Rate (x1-x10)</option>
+                            <option value="Mid Rate">⚡ Mid Rate (x10-x50)</option>
+                            <option value="High Rate">🔥 High Rate (x50-x200)</option>
+                            <option value="x1">🎯 x1 сервер</option>
+                            <option value="x100">🚀 x100 сервер</option>
+                            <option value="x1000">💨 x1000 сервер</option>
+                            <option value="New">🆕 Новый</option>
+                            <option value="Stable">📌 Стабильный</option>
+                            <option value="Donate">💰 С донатом</option>
+                            <option value="No Donate">💎 Без доната</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Логотип -->
+                    <div class="form-group">
+                        <label>Логотип сервера</label>
+                        <input type="file" id="serverLogo" accept="image/jpeg,image/png,image/webp,image/gif">
+                        <div id="logoPreview" class="logo-preview"></div>
+                    </div>
+                    
+                    <!-- WYSIWYG редактор описания -->
+                    <div class="form-group full-width">
+                        <label>Описание (HTML редактор)</label>
+                        <textarea id="serverDescription" rows="10"></textarea>
+                    </div>
+                    
+                    <div style="margin-top: 15px; display: flex; gap: 15px;">
+                        <button type="submit" class="btn-save">💾 Сохранить</button>
+                        <button type="button" id="cancelEdit" class="btn-delete">❌ Отмена</button>
                     </div>
                 </form>
             </div>
@@ -201,8 +278,48 @@ select option {
         </div>
     </div>
 
+    <!-- Модальное окно подтверждения удаления -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>🗑️ Подтверждение удаления</h3>
+            <p id="deleteMessage">Вы уверены, что хотите удалить этот сервер?</p>
+            <div class="modal-buttons">
+                <button id="confirmDelete" class="btn-delete">Удалить</button>
+                <button id="cancelDelete" class="btn-save">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         let editingServerId = null;
+        let serverToDelete = null;
+        let tinymceInitialized = false;
+
+        // Инициализация TinyMCE
+        function initTinyMCE() {
+            if (tinymceInitialized) {
+                tinymce.remove('#serverDescription');
+            }
+            tinymce.init({
+                selector: '#serverDescription',
+                height: 400,
+                menubar: true,
+                plugins: [
+                    'advlist', 'autolink', 'lists', 'link', 'image', 'charmap', 'preview',
+                    'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+                    'insertdatetime', 'media', 'table', 'help', 'wordcount'
+                ],
+                toolbar: 'undo redo | blocks | bold italic backcolor | ' +
+                    'alignleft aligncenter alignright alignjustify | ' +
+                    'bullist numlist outdent indent | removeformat | help',
+                content_style: 'body { font-family: "Segoe UI", Arial, sans-serif; font-size: 14px; color: #333; background: #fff; }',
+                setup: function(editor) {
+                    editor.on('init', function() {
+                        tinymceInitialized = true;
+                    });
+                }
+            });
+        }
 
         // Проверка авторизации
         async function checkAuth() {
@@ -211,6 +328,7 @@ select option {
                 if (res.ok) {
                     document.getElementById('loginContainer').style.display = 'none';
                     document.getElementById('adminContainer').style.display = 'block';
+                    initTinyMCE();
                     loadServers();
                     loadReviews();
                     loadDmca();
@@ -276,12 +394,18 @@ select option {
             container.innerHTML = servers.map(s => `
                 <div class="list-item">
                     <div class="list-item-info">
-                        <h4>${escapeHtml(s.name)}</h4>
-                        <div>${s.website} | ${s.version || 'Interlude'} | ${s.status}</div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            ${s.logo ? `<img src="${s.logo}" style="width: 50px; height: 50px; object-fit: cover; border-radius: 8px;">` : '<div style="width: 50px; height: 50px; background: rgba(0,184,148,0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center;">🎮</div>'}
+                            <div>
+                                <h4>${escapeHtml(s.name)}</h4>
+                                <div>${s.website} | ${s.version || 'Interlude'} | ${s.status}</div>
+                                ${s.tags && s.tags.length ? `<div style="font-size: 0.75rem; color: #6c5ce7;">🏷️ ${s.tags.join(', ')}</div>` : ''}
+                            </div>
+                        </div>
                     </div>
                     <div class="list-item-actions">
                         <button class="btn-edit" onclick="editServer('${s._id}')">✏️ Редактировать</button>
-                        <button class="btn-delete" onclick="deleteServer('${s._id}')">🗑️ Удалить</button>
+                        <button class="btn-delete" onclick="showDeleteModal('${s._id}', '${escapeHtml(s.name)}')">🗑️ Удалить</button>
                     </div>
                 </div>
             `).join('');
@@ -310,7 +434,28 @@ select option {
             document.getElementById('serverQuestAdena').value = s.questAdena || '';
             document.getElementById('serverQuest').value = s.quest || '';
             document.getElementById('serverQuestExp').value = s.questExp || '';
-            document.getElementById('serverDescription').value = s.description || '';
+            document.getElementById('serverTags').value = (s.tags || []).join(', ');
+            
+            // Выбор категорий
+            const categorySelect = document.getElementById('serverCategories');
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                categorySelect.options[i].selected = (s.categories || []).includes(categorySelect.options[i].value);
+            }
+            
+            // Предпросмотр логотипа
+            if (s.logo) {
+                document.getElementById('logoPreview').innerHTML = `<img src="${s.logo}" style="max-width: 100px; border-radius: 10px;">`;
+            } else {
+                document.getElementById('logoPreview').innerHTML = '';
+            }
+            
+            // Установка описания в TinyMCE
+            if (tinymceInitialized) {
+                tinymce.get('serverDescription').setContent(s.description || '');
+            } else {
+                document.getElementById('serverDescription').value = s.description || '';
+            }
+            
             document.getElementById('formTitle').innerHTML = '✏️ Редактировать сервер';
             window.scrollTo({ top: 0, behavior: 'smooth' });
         };
@@ -318,39 +463,55 @@ select option {
         // Сохранение сервера
         document.getElementById('serverForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            const data = {
-                name: document.getElementById('serverName').value,
-                website: document.getElementById('serverWebsite').value,
-                version: document.getElementById('serverVersion').value,
-                openingDate: document.getElementById('serverOpeningDate').value || null,
-                status: document.getElementById('serverStatus').value,
-                exp: document.getElementById('serverExp').value,
-                adena: document.getElementById('serverAdena').value,
-                drop: document.getElementById('serverDrop').value,
-                spoil: document.getElementById('serverSpoil').value,
-                spoilChance: document.getElementById('serverSpoilChance').value,
-                sealstone: document.getElementById('serverSealstone').value,
-                raidBossExp: document.getElementById('serverRaidBossExp').value,
-                raidBossDrop: document.getElementById('serverRaidBossDrop').value,
-                epicRaidBossDrop: document.getElementById('serverEpicRaidBossDrop').value,
-                questAdena: document.getElementById('serverQuestAdena').value,
-                quest: document.getElementById('serverQuest').value,
-                questExp: document.getElementById('serverQuestExp').value,
-                description: document.getElementById('serverDescription').value
-            };
+            
+            const formData = new FormData();
+            formData.append('name', document.getElementById('serverName').value);
+            formData.append('website', document.getElementById('serverWebsite').value);
+            formData.append('version', document.getElementById('serverVersion').value);
+            formData.append('openingDate', document.getElementById('serverOpeningDate').value);
+            formData.append('status', document.getElementById('serverStatus').value);
+            formData.append('exp', document.getElementById('serverExp').value);
+            formData.append('adena', document.getElementById('serverAdena').value);
+            formData.append('drop', document.getElementById('serverDrop').value);
+            formData.append('spoil', document.getElementById('serverSpoil').value);
+            formData.append('spoilChance', document.getElementById('serverSpoilChance').value);
+            formData.append('sealstone', document.getElementById('serverSealstone').value);
+            formData.append('raidBossExp', document.getElementById('serverRaidBossExp').value);
+            formData.append('raidBossDrop', document.getElementById('serverRaidBossDrop').value);
+            formData.append('epicRaidBossDrop', document.getElementById('serverEpicRaidBossDrop').value);
+            formData.append('questAdena', document.getElementById('serverQuestAdena').value);
+            formData.append('quest', document.getElementById('serverQuest').value);
+            formData.append('questExp', document.getElementById('serverQuestExp').value);
+            formData.append('tags', document.getElementById('serverTags').value);
+            
+            const categories = Array.from(document.getElementById('serverCategories').selectedOptions).map(opt => opt.value);
+            formData.append('categories', categories.join(','));
+            
+            const description = tinymceInitialized ? tinymce.get('serverDescription').getContent() : document.getElementById('serverDescription').value;
+            formData.append('description', description);
+            
+            const logoFile = document.getElementById('serverLogo').files[0];
+            if (logoFile) {
+                formData.append('logo', logoFile);
+            }
             
             const url = editingServerId ? `/api/servers/${editingServerId}` : '/api/servers';
             const method = editingServerId ? 'PUT' : 'POST';
             
-            await fetch(url, {
+            const response = await fetch(url, {
                 method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data),
+                body: formData,
                 credentials: 'include'
             });
             
-            resetForm();
-            loadServers();
+            const data = await response.json();
+            if (data.success) {
+                alert(editingServerId ? 'Сервер обновлен' : 'Сервер создан');
+                resetForm();
+                loadServers();
+            } else {
+                alert(data.error || 'Ошибка сохранения');
+            }
         });
 
         document.getElementById('cancelEdit').addEventListener('click', resetForm);
@@ -360,15 +521,46 @@ select option {
             document.getElementById('serverForm').reset();
             document.getElementById('serverId').value = '';
             document.getElementById('formTitle').innerHTML = '➕ Добавить сервер';
+            document.getElementById('logoPreview').innerHTML = '';
+            if (tinymceInitialized) {
+                tinymce.get('serverDescription').setContent('');
+            }
         }
 
+        // Предпросмотр логотипа
+        document.getElementById('serverLogo').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    document.getElementById('logoPreview').innerHTML = `<img src="${event.target.result}" style="max-width: 100px; border-radius: 10px;">`;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
         // Удаление сервера
-        window.deleteServer = async (id) => {
-            if (confirm('Удалить сервер?')) {
-                await fetch(`/api/servers/${id}`, { method: 'DELETE', credentials: 'include' });
+        window.showDeleteModal = function(id, name) {
+            serverToDelete = id;
+            document.getElementById('deleteMessage').textContent = `Удалить сервер "${name}"?`;
+            document.getElementById('deleteModal').style.display = 'flex';
+        };
+        
+        document.getElementById('confirmDelete').addEventListener('click', async () => {
+            if (!serverToDelete) return;
+            const response = await fetch(`/api/servers/${serverToDelete}`, { method: 'DELETE', credentials: 'include' });
+            if (response.ok) {
+                alert('Сервер удален');
                 loadServers();
             }
-        };
+            document.getElementById('deleteModal').style.display = 'none';
+            serverToDelete = null;
+        });
+        
+        document.getElementById('cancelDelete').addEventListener('click', () => {
+            document.getElementById('deleteModal').style.display = 'none';
+            serverToDelete = null;
+        });
 
         // Загрузка отзывов
         async function loadReviews() {

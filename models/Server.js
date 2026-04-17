@@ -42,10 +42,11 @@ const ServerSchema = new mongoose.Schema({
     quest: { type: String, default: '' },
     questExp: { type: String, default: '' },
     
+    // Описание с поддержкой HTML (WYSIWYG)
     description: { 
         type: String, 
         default: '',
-        maxlength: 1000
+        maxlength: 5000
     },
     active: { 
         type: Boolean, 
@@ -58,6 +59,29 @@ const ServerSchema = new mongoose.Schema({
         sparse: true,
         index: true
     },
+    
+    // Логотип сервера
+    logo: {
+        type: String,
+        default: ''
+    },
+    logoUrl: {
+        type: String,
+        default: ''
+    },
+    
+    // Теги и категории (новое)
+    tags: [{
+        type: String,
+        trim: true,
+        lowercase: true
+    }],
+    categories: [{
+        type: String,
+        enum: ['PvP', 'PvE', 'RP', 'Fun', 'Hardcore', 'Low Rate', 'Mid Rate', 'High Rate', 'x1', 'x100', 'x1000', 'New', 'Stable', 'Donate', 'No Donate'],
+        default: []
+    }],
+    
     rating: {
         average: { type: Number, default: 0 },
         count: { type: Number, default: 0 },
@@ -85,28 +109,14 @@ const ServerSchema = new mongoose.Schema({
     updatedAt: { type: Date, default: Date.now }
 });
 
-// Индексы для оптимизации запросов
-ServerSchema.index({ version: 1, active: 1 });
-ServerSchema.index({ active: 1, 'rating.average': -1 });
-ServerSchema.index({ active: 1, createdAt: -1 });
-ServerSchema.index({ status: 1, active: 1 });
-ServerSchema.index({ openingDate: -1, active: 1 });
+// Индексы для тегов и категорий
+ServerSchema.index({ tags: 1 });
+ServerSchema.index({ categories: 1 });
 
 // Middleware для обновления updatedAt
 ServerSchema.pre('save', function(next) {
     this.updatedAt = Date.now();
     next();
-});
-
-// Виртуальное поле для получения рейтов списком
-ServerSchema.virtual('ratesList').get(function() {
-    const rates = [];
-    if (this.exp) rates.push({ label: 'Exp', value: this.exp });
-    if (this.adena) rates.push({ label: 'Adena', value: this.adena });
-    if (this.drop) rates.push({ label: 'Drop', value: this.drop });
-    if (this.spoil) rates.push({ label: 'Spoil', value: this.spoil });
-    if (this.spoilChance) rates.push({ label: 'Spoil Chance', value: this.spoilChance });
-    return rates;
 });
 
 module.exports = mongoose.model('Server', ServerSchema);
