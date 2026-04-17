@@ -64,6 +64,58 @@ function baseLayout({
     <script src="/js/main.js" defer></script>
     <script src="/js/global.js" defer></script>
     ${additionalScripts}
+    <!-- Модальное окно для написания отзыва -->
+<div id="reviewModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" onclick="window.closeModal('reviewModal')">&times;</span>
+        <h3>✍️ Написать отзыв о сервере</h3>
+        <form id="reviewForm">
+            <input type="hidden" id="reviewServerId">
+            <div class="form-group">
+                <label>Ваше имя *</label>
+                <input type="text" id="reviewAuthor" required placeholder="Как вас называть?" maxlength="50">
+            </div>
+            <div class="form-group">
+                <label>Оценка *</label>
+                <div class="stars">
+                    <span data-rating="1">☆</span>
+                    <span data-rating="2">☆</span>
+                    <span data-rating="3">☆</span>
+                    <span data-rating="4">☆</span>
+                    <span data-rating="5">☆</span>
+                </div>
+                <input type="hidden" id="reviewRating" required>
+            </div>
+            <div class="form-group">
+                <label>Заголовок отзыва *</label>
+                <input type="text" id="reviewTitle" required placeholder="Кратко о вашем опыте" maxlength="100">
+            </div>
+            <div class="form-group">
+                <label>Текст отзыва *</label>
+                <textarea id="reviewContent" rows="4" required placeholder="Расскажите подробнее о сервере..." maxlength="1520"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Плюсы</label>
+                <textarea id="reviewPros" rows="2" placeholder="Что вам понравилось?" maxlength="300"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Минусы</label>
+                <textarea id="reviewCons" rows="2" placeholder="Что можно улучшить?" maxlength="300"></textarea>
+            </div>
+            <button type="submit" class="btn-submit">📨 Отправить отзыв</button>
+        </form>
+    </div>
+</div>
+
+<!-- Модальное окно для просмотра отзывов -->
+<div id="reviewsListModal" class="modal" style="display: none;">
+    <div class="modal-content modal-reviews">
+        <span class="close-reviews" onclick="window.closeModal('reviewsListModal')">&times;</span>
+        <h3 id="reviewsModalTitle">📝 Отзывы о сервере</h3>
+        <div id="reviewsModalList" class="reviews-modal-list"></div>
+        <div id="reviewsModalPagination" class="pagination"></div>
+    </div>
+</div>
 </body>
 </html>`;
 }
